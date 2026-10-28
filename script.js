@@ -1,11 +1,17 @@
 /* =====================================
-   SHOPBUILDER — version Supabase
+   DUKANI — version Supabase
 ===================================== */
 
 const SUPABASE_URL = "https://aowfjpaclhrmmhpuxauq.supabase.co";
 const SUPABASE_CLE = "sb_publishable_bHKXQAMowU0qoVOp5RqlmA_Qm_LrKC6";
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_CLE);
+
+/* Dossier du site (ex. https://…/Shopbuilder-/) pour les liens des emails */
+
+function dossierSite() {
+    return location.origin + location.pathname.replace(/[^\/]*$/, "");
+}
 
 const INACTIVITE_MAX = 30 * 60 * 1000;
 
@@ -302,7 +308,7 @@ async function afficherProduits() {
 
     if (produits.length === 0) {
         const vide = ligne(liste, "p", "Aucun produit pour le moment. Ajoutez le premier.");
-        vide.style.cssText = "text-align:center;color:#4d6a88;margin-top:25px;";
+        vide.style.cssText = "text-align:center;color:var(--encre-douce);margin-top:25px;";
         return;
     }
 
@@ -483,7 +489,7 @@ function afficherCommandes() {
 
     if (commandes.length === 0) {
         const vide = ligne(liste, "p", "Aucune commande pour le moment.");
-        vide.style.cssText = "text-align:center;color:#4d6a88;margin-top:25px;";
+        vide.style.cssText = "text-align:center;color:var(--encre-douce);margin-top:25px;";
         return;
     }
 
@@ -550,7 +556,7 @@ function fermerStatistiques() { fermer("statistiques"); }
 function erreurAuth(message, succes) {
     const zone = $("auth-erreur");
     zone.textContent = message || "";
-    zone.style.color = succes ? "#15803d" : "";
+    zone.style.color = succes ? "var(--succes)" : "";
 }
 
 function basculerAuth() {
@@ -634,7 +640,10 @@ async function validerAuth() {
             const { data, error } = await sb.auth.signUp({
                 email: email,
                 password: mdp,
-                options: { data: { nom: nom, role: "vendeur" } }
+                options: {
+                    data: { nom: nom, role: "vendeur" },
+                    emailRedirectTo: dossierSite() + "vendeur.html"
+                }
             });
 
             if (error) { erreurAuth(traduire(error)); return; }

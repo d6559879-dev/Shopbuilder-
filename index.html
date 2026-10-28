@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="connect-src https://aowfjpaclhrmmhpuxauq.supabase.co wss://aowfjpaclhrmmhpuxauq.supabase.co; img-src data: https://aowfjpaclhrmmhpuxauq.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="referrer" content="no-referrer">
-    <title>ShopBuilder — Boutiques</title>
+    <title>Dukani — Boutiques</title>
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header class="header">
-        <div class="logo">🛍️ ShopBuilder</div>
-        <button class="menu" onclick="ouvrirCompte()" aria-label="Mon compte">👤</button>
+        <div class="logo">🛍️ Dukani</div>
+        <div class="header-droite">
+            <button class="theme-btn" id="bouton-theme" type="button" onclick="changerTheme()">🌓</button>
+            <button class="menu" onclick="ouvrirCompte()" aria-label="Mon compte">👤</button>
+        </div>
     </header>
 
     <main class="accueil">

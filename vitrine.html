@@ -6,13 +6,17 @@
     <meta http-equiv="Content-Security-Policy" content="connect-src https://aowfjpaclhrmmhpuxauq.supabase.co wss://aowfjpaclhrmmhpuxauq.supabase.co; img-src data: https://aowfjpaclhrmmhpuxauq.supabase.co; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
     <meta name="referrer" content="no-referrer">
     <title>Boutique</title>
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <header class="header">
         <div class="logo">🛍️ <span id="v-logo">Boutique</span></div>
-        <a href="index.html" class="lien-retour">← Boutiques</a>
+        <div class="header-droite">
+            <button class="theme-btn" id="bouton-theme" type="button" onclick="changerTheme()">🌓</button>
+            <a href="index.html" class="lien-retour">← Boutiques</a>
+        </div>
     </header>
 
     <main class="accueil">
@@ -29,7 +33,7 @@
             <div id="v-produits" class="grille-produits"></div>
         </section>
 
-        <p class="pied-vitrine">Propulsé par ShopBuilder</p>
+        <p class="pied-vitrine">Propulsé par Dukani</p>
 
     </main>
 

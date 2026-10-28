@@ -1,10 +1,13 @@
 /* =====================================
-   SHOPBUILDER — place de marché
+   DUKANI — place de marché
    (accueil public + espace acheteur)
 ===================================== */
 
 const SUPABASE_URL = "https://aowfjpaclhrmmhpuxauq.supabase.co";
 const SUPABASE_CLE = "sb_publishable_bHKXQAMowU0qoVOp5RqlmA_Qm_LrKC6";
+
+/* Arrivée depuis le lien de confirmation d'un email ? (à lire avant que Supabase efface l'adresse) */
+const viensDeConfirmation = /type=(signup|email)/.test(location.hash);
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_CLE);
 
@@ -92,7 +95,7 @@ $("recherche").addEventListener("input", function () {
 function erreurAuth(message, succes) {
     const zone = $("a-erreur");
     zone.textContent = message || "";
-    zone.style.color = succes ? "#15803d" : "";
+    zone.style.color = succes ? "var(--succes)" : "";
 }
 
 function ouvrirAuth() { ouvrir("auth"); }
@@ -166,7 +169,10 @@ async function validerAuth() {
             const { data, error } = await sb.auth.signUp({
                 email: email,
                 password: mdp,
-                options: { data: { nom: nom, role: "acheteur" } }
+                options: {
+                    data: { nom: nom, role: "acheteur" },
+                    emailRedirectTo: location.origin + location.pathname + location.search
+                }
             });
 
             if (error) { erreurAuth(traduire(error)); return; }
@@ -206,6 +212,13 @@ async function ouvrirSession(user) {
     fermer("auth");
 
     /* Retour vers la boutique où l'achat a commencé */
+
+    /* Vendeur qui vient de confirmer son email → son espace */
+
+    if (role === "vendeur" && viensDeConfirmation) {
+        location.replace("vendeur.html");
+        return;
+    }
 
     const retour = params.get("retour");
 
@@ -261,7 +274,7 @@ async function ouvrirMesCommandes() {
     if (error) {
         ligne(liste, "p", "⚠️ Impossible de charger vos commandes.");
     } else if (!data || data.length === 0) {
-        ligne(liste, "p", "Aucune commande pour le moment.").style.color = "#4d6a88";
+        ligne(liste, "p", "Aucune commande pour le moment.").style.color = "var(--encre-douce)";
     } else {
         data.forEach(c => {
             const carte = document.createElement("div");

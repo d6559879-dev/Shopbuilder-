@@ -1,5 +1,5 @@
 /* =====================================
-   SHOPBUILDER — vitrine publique
+   DUKANI — vitrine publique
 ===================================== */
 
 const SUPABASE_URL = "https://aowfjpaclhrmmhpuxauq.supabase.co";
@@ -64,7 +64,7 @@ function afficher() {
 
     if (boutique.produits.length === 0) {
         const vide = ligne(zone, "p", "Aucun produit pour le moment.");
-        vide.style.color = "#4d6a88";
+        vide.style.color = "var(--encre-douce)";
         return;
     }
 
