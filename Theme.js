@@ -1,17 +1,28 @@
-/* Thème : auto (réglage de l'appareil) → clair → sombre */
+/* Paramètres d'apparence : automatique (réglage de l'appareil) / clair / sombre.
+   Le choix de l'utilisateur remplace toujours celui de son téléphone. */
 
 (function () {
     var CLE = "dukani_theme";
-    var ORDRE = ["auto", "clair", "sombre"];
-    var ICONES = { auto: "🌓", clair: "☀️", sombre: "🌙" };
-    var NOMS = { auto: "Thème automatique", clair: "Thème clair", sombre: "Thème sombre" };
+    var CHOIX = [
+        { mode: "auto", icone: "🌓", nom: "Automatique" },
+        { mode: "clair", icone: "☀️", nom: "Clair" },
+        { mode: "sombre", icone: "🌙", nom: "Sombre" }
+    ];
 
     function lire() {
         try {
             var m = localStorage.getItem(CLE);
-            return ORDRE.indexOf(m) >= 0 ? m : "auto";
-        } catch (e) {
-            return "auto";
+            for (var i = 0; i < CHOIX.length; i++) if (CHOIX[i].mode === m) return m;
+        } catch (e) {}
+        return "auto";
+    }
+
+    function marquer(mode) {
+        var boutons = document.querySelectorAll("#parametres .choix-theme button");
+        for (var i = 0; i < boutons.length; i++) {
+            var actif = boutons[i].getAttribute("data-mode") === mode;
+            boutons[i].classList.toggle("actif", actif);
+            boutons[i].setAttribute("aria-pressed", actif ? "true" : "false");
         }
     }
 
@@ -20,21 +31,95 @@
         if (mode === "clair") r.setAttribute("data-theme", "light");
         else if (mode === "sombre") r.setAttribute("data-theme", "dark");
         else r.removeAttribute("data-theme");
-
-        var bouton = document.getElementById("bouton-theme");
-        if (bouton) {
-            bouton.textContent = ICONES[mode];
-            bouton.title = NOMS[mode];
-            bouton.setAttribute("aria-label", NOMS[mode] + " (toucher pour changer)");
-        }
+        marquer(mode);
     }
 
-    window.changerTheme = function () {
-        var suivant = ORDRE[(ORDRE.indexOf(lire()) + 1) % ORDRE.length];
-        try { localStorage.setItem(CLE, suivant); } catch (e) {}
-        appliquer(suivant);
+    window.choisirTheme = function (mode) {
+        try { localStorage.setItem(CLE, mode); } catch (e) {}
+        appliquer(mode);
     };
 
+    function creerFenetre() {
+        if (document.getElementById("parametres")) return;
+
+        var fenetre = document.createElement("div");
+        fenetre.id = "parametres";
+        fenetre.className = "fenetre";
+        fenetre.addEventListener("click", function (e) {
+            if (e.target === fenetre) window.fermerParametres();
+        });
+
+        var boite = document.createElement("div");
+        boite.className = "creation-box";
+
+        var fermer = document.createElement("button");
+        fermer.className = "fermer";
+        fermer.type = "button";
+        fermer.textContent = "✕";
+        fermer.setAttribute("aria-label", "Fermer");
+        fermer.addEventListener("click", function () { window.fermerParametres(); });
+
+        var titre = document.createElement("h2");
+        titre.textContent = "⚙️ Paramètres";
+
+        var sousTitre = document.createElement("label");
+        sousTitre.textContent = "Apparence";
+
+        var groupe = document.createElement("div");
+        groupe.className = "choix-theme";
+
+        CHOIX.forEach(function (c) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.setAttribute("data-mode", c.mode);
+
+            var ic = document.createElement("span");
+            ic.className = "choix-icone";
+            ic.textContent = c.icone;
+
+            var tx = document.createElement("span");
+            tx.textContent = c.nom;
+
+            b.appendChild(ic);
+            b.appendChild(tx);
+            b.addEventListener("click", function () { window.choisirTheme(c.mode); });
+            groupe.appendChild(b);
+        });
+
+        var aide = document.createElement("p");
+        aide.className = "sous-titre";
+        aide.textContent = "Automatique suit le réglage de votre téléphone. " +
+            "Clair et Sombre le remplacent.";
+
+        boite.appendChild(fermer);
+        boite.appendChild(titre);
+        boite.appendChild(sousTitre);
+        boite.appendChild(groupe);
+        boite.appendChild(aide);
+        fenetre.appendChild(boite);
+        document.body.appendChild(fenetre);
+
+        marquer(lire());
+    }
+
+    window.ouvrirParametres = function () {
+        creerFenetre();
+        marquer(lire());
+        document.getElementById("parametres").classList.add("active");
+    };
+
+    window.fermerParametres = function () {
+        var f = document.getElementById("parametres");
+        if (f) f.classList.remove("active");
+    };
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") window.fermerParametres();
+    });
+
     appliquer(lire());
-    document.addEventListener("DOMContentLoaded", function () { appliquer(lire()); });
+    document.addEventListener("DOMContentLoaded", function () {
+        creerFenetre();
+        appliquer(lire());
+    });
 })();

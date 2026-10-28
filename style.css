@@ -1050,3 +1050,48 @@ a.carte-boutique:active {
 .theme-btn:active {
     transform: scale(0.92);
 }
+
+
+/* Choix du thème dans les paramètres */
+
+.choix-theme {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.choix-theme button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 6px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--encre);
+
+    background: var(--g60);
+    border: 1.5px solid var(--verre-bord);
+    border-radius: var(--rayon-petit);
+    box-shadow: var(--reflet);
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.choix-theme button:active {
+    transform: scale(0.95);
+}
+
+.choix-theme button.actif {
+    border-color: var(--violet-clair);
+    background: rgba(124, 58, 237, 0.18);
+    box-shadow: var(--reflet), 0 0 0 3px rgba(124, 58, 237, 0.25);
+}
+
+.choix-icone {
+    font-size: 24px;
+    line-height: 1;
+}
