@@ -47,6 +47,25 @@ async function charger() {
     afficher();
 }
 
+/* Numéro au format international (chiffres seuls) pour wa.me.
+   Un numéro local congolais (08…, 09…) devient 2438…, 2439… */
+
+function numeroWhatsApp(brut) {
+    let chiffres = String(brut).replace(/[^0-9]/g, "");
+
+    if (String(brut).trim().startsWith("+")) {
+        /* déjà international */
+    } else if (chiffres.startsWith("00")) {
+        chiffres = chiffres.slice(2);
+    } else if (chiffres.startsWith("0")) {
+        chiffres = "243" + chiffres.slice(1);
+    } else if (chiffres.length === 9) {
+        chiffres = "243" + chiffres;
+    }
+
+    return chiffres.length >= 9 && chiffres.length <= 15 ? chiffres : "";
+}
+
 function afficher() {
     document.title = boutique.nom;
     $("v-logo").textContent = boutique.nom;
@@ -57,6 +76,17 @@ function afficher() {
         const lien = $("v-tel");
         lien.hidden = false;
         lien.href = "tel:" + boutique.telephone.replace(/[^0-9+]/g, "");
+
+        /* Même numéro pour WhatsApp */
+        const numeroWa = numeroWhatsApp(boutique.telephone);
+
+        if (numeroWa) {
+            const wa = $("v-whatsapp");
+            const message = "Bonjour, je vous contacte depuis votre boutique « " +
+                boutique.nom + " » sur Dukani.";
+            wa.hidden = false;
+            wa.href = "https://wa.me/" + numeroWa + "?text=" + encodeURIComponent(message);
+        }
     }
 
     const zone = $("v-produits");
