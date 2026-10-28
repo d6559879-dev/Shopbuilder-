@@ -25,7 +25,16 @@
             <span class="badge">🛒 Place de marché</span>
             <h1>Trouvez votre boutique <span>préférée.</span></h1>
             <p>Parcourez les boutiques, découvrez leurs produits et commandez en quelques secondes.</p>
-            <input id="recherche" class="recherche" type="search" placeholder="🔍 Rechercher une boutique..." maxlength="60">
+            <input id="recherche" class="recherche" type="search" placeholder="🔍 Boutique ou produit..." maxlength="60" aria-label="Rechercher une boutique ou un produit">
+
+            <div id="filtres" class="filtres" role="group" aria-label="Filtrer par catégorie">
+                <button type="button" class="filtre actif" data-cat="" aria-pressed="true">Toutes</button>
+                <button type="button" class="filtre" data-cat="Mode" aria-pressed="false">👕 Mode</button>
+                <button type="button" class="filtre" data-cat="Électronique" aria-pressed="false">📱 Électronique</button>
+                <button type="button" class="filtre" data-cat="Maison" aria-pressed="false">🏠 Maison</button>
+                <button type="button" class="filtre" data-cat="Alimentation" aria-pressed="false">🍔 Alimentation</button>
+                <button type="button" class="filtre" data-cat="Autre" aria-pressed="false">📦 Autre</button>
+            </div>
         </section>
 
         <section class="fonctionnalites">

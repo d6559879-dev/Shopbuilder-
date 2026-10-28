@@ -21,6 +21,7 @@ let role = null;
 let nomProfil = "";
 let modeInscription = false;
 let minuteurRecherche = null;
+let categorieActive = "";
 
 
 /* ---------- Outils ---------- */
@@ -45,7 +46,8 @@ async function chargerBoutiques() {
     const zone = $("liste-boutiques");
 
     const { data, error } = await sb.rpc("marche_boutiques", {
-        p_recherche: terme || null
+        p_recherche: terme || null,
+        p_categorie: categorieActive || null
     });
 
     zone.innerHTML = "";
@@ -56,7 +58,8 @@ async function chargerBoutiques() {
     }
 
     if (!data || data.length === 0) {
-        ligne(zone, "p", terme ? "Aucune boutique trouvée." : "Aucune boutique pour le moment.");
+        const filtre = terme || categorieActive;
+        ligne(zone, "p", filtre ? "Aucune boutique trouvée pour cette recherche." : "Aucune boutique pour le moment.");
         return;
     }
 
@@ -79,10 +82,30 @@ async function chargerBoutiques() {
         ligne(carte, "h3", b.nom);
         if (b.description) ligne(carte, "p", b.description);
         ligne(carte, "p", "📦 " + b.nb + (b.nb > 1 ? " produits" : " produit"));
+        if (Array.isArray(b.categories) && b.categories.length) {
+            ligne(carte, "p", "🏷️ " + b.categories.join(" · ")).className = "categories-boutique";
+        }
 
         zone.appendChild(carte);
     });
 }
+
+/* Filtres par catégorie */
+
+$("filtres").addEventListener("click", function (e) {
+    const bouton = e.target.closest(".filtre");
+    if (!bouton) return;
+
+    categorieActive = bouton.getAttribute("data-cat") || "";
+
+    this.querySelectorAll(".filtre").forEach(b => {
+        const actif = b === bouton;
+        b.classList.toggle("actif", actif);
+        b.setAttribute("aria-pressed", actif ? "true" : "false");
+    });
+
+    chargerBoutiques();
+});
 
 $("recherche").addEventListener("input", function () {
     clearTimeout(minuteurRecherche);
