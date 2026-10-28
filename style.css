@@ -751,7 +751,8 @@ button:focus-visible,
    PHOTO DU PRODUIT
 ===================================== */
 
-.creation-box #image-produit {
+.creation-box #image-produit,
+.creation-box #image-boutique {
     padding: 12px;
     font-size: 14px;
 }
@@ -1170,4 +1171,42 @@ a.carte-boutique:active {
 
 .categories-boutique {
     font-size: 12px;
+}
+
+
+/* Photo de la boutique */
+
+#apercu-boutique {
+    width: 100%;
+    max-width: 280px;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 1px solid var(--verre-bord);
+    box-shadow: var(--ombre);
+}
+
+.photo-boutique-vendeur,
+.photo-hero {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 18px;
+    border: 1px solid var(--verre-bord);
+    box-shadow: var(--ombre);
+}
+
+.photo-boutique-vendeur {
+    margin: 0 auto 14px;
+}
+
+.photo-hero {
+    margin-bottom: 16px;
+}
+
+.photo-boutique {
+    height: auto;
+    aspect-ratio: 4 / 3;
 }

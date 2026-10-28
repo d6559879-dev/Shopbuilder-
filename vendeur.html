@@ -167,6 +167,20 @@
             </p>
 
 
+            <label>Photo de la boutique</label>
+
+            <input id="image-boutique" type="file" accept="image/*">
+
+            <div class="apercu-image">
+                <img id="apercu-boutique" src="" alt="Aperçu de la boutique" style="display:none;">
+            </div>
+
+            <button id="retirer-photo-boutique" class="bouton-secondaire" type="button"
+                    onclick="retirerPhotoBoutique()" hidden>
+                Retirer la photo
+            </button>
+
+
             <label>Nom de la boutique</label>
 
             <input
@@ -229,7 +243,10 @@
                 ✕
             </button>
 
-            <div class="boutique-logo">
+            <img id="afficher-photo" class="photo-boutique-vendeur"
+                 alt="Photo de la boutique" hidden>
+
+            <div id="afficher-logo" class="boutique-logo">
                 🏪
             </div>
 

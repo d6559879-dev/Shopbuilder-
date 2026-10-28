@@ -68,9 +68,11 @@ async function chargerBoutiques() {
         carte.className = "produit-item carte-boutique";
         carte.href = "vitrine.html?b=" + encodeURIComponent(b.slug);
 
-        if (b.apercu) {
+        const cheminPhoto = b.logo || b.apercu;
+
+        if (cheminPhoto) {
             const photo = document.createElement("img");
-            photo.src = urlPhoto(b.apercu);
+            photo.src = urlPhoto(cheminPhoto);
             photo.alt = b.nom;
             photo.className = "photo-boutique";
             photo.loading = "lazy";

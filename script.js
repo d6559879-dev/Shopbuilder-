@@ -108,7 +108,10 @@ function allerA(fonction) { fermer("menu"); fonction(); }
 /* ---------- Boutique ---------- */
 
 function ouvrirCreation() { ouvrir("creation"); }
-function fermerCreation() { fermer("creation"); }
+function fermerCreation() {
+    fermer("creation");
+    viderPhotoBoutique();
+}
 
 async function creerBoutique() {
     const nom = $("nom-boutique").value.trim();
@@ -119,16 +122,51 @@ async function creerBoutique() {
     }
 
     const existait = !!boutique;
+    const ancienChemin = boutique ? boutique.image_path || null : null;
+    let imagePath = ancienChemin;
+    let nouveauChemin = null;
+
+    try {
+        const fichier = $("image-boutique").files[0];
+
+        if (fichier) {
+            const photo = await compresserCadre(fichier, 800, 600);
+
+            nouveauChemin = utilisateur.id + "/boutique-" + crypto.randomUUID() + ".jpg";
+
+            const { error } = await sb.storage.from("produits")
+                .upload(nouveauChemin, photo, { contentType: "image/jpeg" });
+
+            if (error) { nouveauChemin = null; throw error; }
+
+            imagePath = nouveauChemin;
+        } else if (retraitPhotoBoutique) {
+            imagePath = null;
+        }
+    } catch (e) {
+        echec(e);
+        return;
+    }
 
     const { error } = await sb.from("boutiques").upsert({
         user_id: utilisateur.id,
         nom: nom,
         description: $("description").value.trim(),
         telephone: $("telephone").value.trim(),
-        devise: $("devise").value
+        devise: $("devise").value,
+        image_path: imagePath
     }, { onConflict: "user_id" });
 
-    if (error) { echec(error); return; }
+    if (error) {
+        if (nouveauChemin) await sb.storage.from("produits").remove([nouveauChemin]);
+        echec(error);
+        return;
+    }
+
+    /* L'ancienne photo n'est plus utilisée : on la supprime */
+    if (ancienChemin && ancienChemin !== imagePath) {
+        await sb.storage.from("produits").remove([ancienChemin]);
+    }
 
     await charger();
     fermerCreation();
@@ -151,6 +189,18 @@ function ouvrirMaBoutique() {
     $("afficher-devise").textContent = boutique.devise;
     $("lien-vitrine").textContent = lienVitrine() || "-";
 
+    const photo = $("afficher-photo");
+
+    if (boutique.image_path) {
+        photo.src = urlPublique(boutique.image_path);
+        photo.hidden = false;
+        $("afficher-logo").hidden = true;
+    } else {
+        photo.removeAttribute("src");
+        photo.hidden = true;
+        $("afficher-logo").hidden = false;
+    }
+
     ouvrir("ma-boutique");
 }
 
@@ -162,6 +212,14 @@ function modifierBoutique() {
     $("telephone").value = boutique ? boutique.telephone || "" : "";
     $("devise").value = boutique ? boutique.devise : "FC";
 
+    viderPhotoBoutique();
+
+    if (boutique && boutique.image_path) {
+        $("apercu-boutique").src = urlPublique(boutique.image_path);
+        $("apercu-boutique").style.display = "block";
+        $("retirer-photo-boutique").hidden = false;
+    }
+
     fermerMaBoutique();
     ouvrirCreation();
 }
@@ -169,10 +227,14 @@ function modifierBoutique() {
 async function supprimerBoutique() {
     if (!confirm("⚠️ Voulez-vous vraiment supprimer cette boutique ?")) return;
 
+    const cheminPhoto = boutique ? boutique.image_path : null;
+
     const { error } = await sb.from("boutiques")
         .delete().eq("user_id", utilisateur.id);
 
     if (error) { echec(error); return; }
+
+    if (cheminPhoto) await sb.storage.from("produits").remove([cheminPhoto]);
 
     await charger();
     fermerMaBoutique();
@@ -208,6 +270,80 @@ async function compresser(fichier) {
 
     return new Promise(ok => canvas.toBlob(ok, "image/jpeg", 0.7));
 }
+
+/* Photo de la boutique : recadrée au format 4:3 (800 × 600) */
+
+async function compresserCadre(fichier, largeur, hauteur) {
+    if (!fichier.type.startsWith("image/")) {
+        throw new Error("Choisis un fichier image valide.");
+    }
+
+    const url = URL.createObjectURL(fichier);
+
+    const img = await new Promise((ok, ko) => {
+        const i = new Image();
+        i.onload = () => ok(i);
+        i.onerror = () => ko(new Error("Impossible de lire cette image."));
+        i.src = url;
+    });
+
+    URL.revokeObjectURL(url);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = largeur;
+    canvas.height = hauteur;
+
+    /* Remplir le cadre en centrant, sans déformer */
+    const echelle = Math.max(largeur / img.width, hauteur / img.height);
+    const w = img.width * echelle;
+    const h = img.height * echelle;
+
+    canvas.getContext("2d").drawImage(img, (largeur - w) / 2, (hauteur - h) / 2, w, h);
+
+    return new Promise(ok => canvas.toBlob(ok, "image/jpeg", 0.8));
+}
+
+function urlPublique(chemin) {
+    return SUPABASE_URL + "/storage/v1/object/public/produits/" +
+        chemin.split("/").map(encodeURIComponent).join("/");
+}
+
+let retraitPhotoBoutique = false;
+
+function viderPhotoBoutique() {
+    retraitPhotoBoutique = false;
+    $("image-boutique").value = "";
+    $("apercu-boutique").removeAttribute("src");
+    $("apercu-boutique").style.display = "none";
+    $("retirer-photo-boutique").hidden = true;
+}
+
+function retirerPhotoBoutique() {
+    viderPhotoBoutique();
+    retraitPhotoBoutique = true;
+}
+
+$("image-boutique").addEventListener("change", function () {
+    const fichier = this.files[0];
+
+    if (!fichier) { return; }
+
+    if (!fichier.type.startsWith("image/")) {
+        alert("⚠️ Choisis un fichier image valide.");
+        this.value = "";
+        return;
+    }
+
+    retraitPhotoBoutique = false;
+
+    const lecteur = new FileReader();
+    lecteur.onload = e => {
+        $("apercu-boutique").src = e.target.result;
+        $("apercu-boutique").style.display = "block";
+        $("retirer-photo-boutique").hidden = false;
+    };
+    lecteur.readAsDataURL(fichier);
+});
 
 function viderApercu() {
     $("image-produit").value = "";

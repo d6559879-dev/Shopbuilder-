@@ -72,6 +72,13 @@ function afficher() {
     $("v-nom").textContent = boutique.nom;
     $("v-description").textContent = boutique.description || "";
 
+    if (boutique.image_path) {
+        const photo = $("v-photo");
+        photo.src = urlPhoto(boutique.image_path);
+        photo.alt = boutique.nom;
+        photo.hidden = false;
+    }
+
     if (boutique.telephone) {
         const lien = $("v-tel");
         lien.hidden = false;
