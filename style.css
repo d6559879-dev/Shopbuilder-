@@ -12,6 +12,7 @@
     --cyan: #7fd3f7;
     --violet: #7c3aed;
     --violet-clair: #a78bfa;
+    --violet-texte: #7c3aed;
     --danger: #e0475b;
 
     --fond: linear-gradient(160deg, #eef8ff 0%, #d6ecfb 45%, #e6defc 100%);
@@ -55,6 +56,7 @@
         --danger: #f0697b;
         --succes: #4ade80;
         --placeholder: #7f90ad;
+    --violet-texte: #b9a5fd;
 
         --fond: linear-gradient(160deg, #0b1220 0%, #121a33 50%, #1a1236 100%);
         --lueur-1: rgba(124, 58, 237, 0.4);
@@ -88,6 +90,7 @@
     --danger: #f0697b;
     --succes: #4ade80;
     --placeholder: #7f90ad;
+    --violet-texte: #b9a5fd;
 
     --fond: linear-gradient(160deg, #0b1220 0%, #121a33 50%, #1a1236 100%);
     --lueur-1: rgba(124, 58, 237, 0.4);
@@ -239,7 +242,7 @@ body::after {
 
     font-size: 13px;
     font-weight: 600;
-    color: var(--violet);
+    color: var(--violet-texte);
 
     background: var(--g70);
     border: 1px solid var(--verre-bord);
@@ -257,7 +260,7 @@ body::after {
 
 .hero h1 span {
     display: block;
-    color: var(--violet);
+    color: var(--violet-texte);
 }
 
 .hero p {
@@ -704,7 +707,7 @@ button:focus-visible,
     display: block;
     margin-top: 10px;
     font-size: 18px;
-    color: var(--violet);
+    color: var(--violet-texte);
 }
 
 .produit-stock {
@@ -858,7 +861,7 @@ button:focus-visible,
 
     font-size: 13px;
     font-weight: 600;
-    color: var(--violet);
+    color: var(--violet-texte);
 
     background: none;
     border: none;
@@ -1015,7 +1018,7 @@ a.carte-boutique:active {
     margin-right: 8px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--violet);
+    color: var(--violet-texte);
     text-decoration: none;
 }
 
