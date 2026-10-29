@@ -207,6 +207,24 @@
             >
 
 
+            <label>Mobile money (facultatif)</label>
+
+            <select id="operateur-paiement">
+                <option value="">Aucun : paiement à la livraison seulement</option>
+                <option value="Airtel Money">Airtel Money</option>
+                <option value="M-Pesa">M-Pesa</option>
+                <option value="Orange Money">Orange Money</option>
+                <option value="Africell Money">Africell Money</option>
+            </select>
+
+            <input
+                id="numero-paiement"
+                type="tel"
+                placeholder="Numéro qui reçoit les paiements"
+                maxlength="30"
+            >
+
+
             <label>Devise</label>
 
             <select id="devise">
@@ -273,6 +291,14 @@
                     <span>💰 Devise</span>
 
                     <strong id="afficher-devise">
+                        -
+                    </strong>
+                </div>
+
+                <div>
+                    <span>📱 Mobile money</span>
+
+                    <strong id="afficher-paiement">
                         -
                     </strong>
                 </div>

@@ -115,6 +115,33 @@
         </div>
     </div>
 
+    <!-- PAIEMENT MOBILE MONEY -->
+    <div id="paiement" class="fenetre">
+        <div class="creation-box">
+            <button class="fermer" onclick="fermer('paiement')">✕</button>
+            <h2>📱 Payer par mobile money</h2>
+            <p class="sous-titre" id="p-boutique"></p>
+
+            <div class="boite-paiement">
+                <span>Envoyez exactement</span>
+                <strong id="p-montant"></strong>
+                <span id="p-operateur"></span>
+                <strong class="numero-paiement" id="p-numero"></strong>
+                <button type="button" class="bouton-secondaire" onclick="copierNumeroPaiement()">📋 Copier le numéro</button>
+            </div>
+
+            <p class="sous-titre">
+                Une fois l'argent envoyé, saisissez ci-dessous la référence de la
+                transaction reçue par SMS. Le vendeur vérifiera votre paiement.
+            </p>
+
+            <label>Référence de la transaction</label>
+            <input id="p-reference" type="text" maxlength="40" placeholder="Ex : MP2610291234">
+
+            <button class="creer" onclick="declarerPaiement()">J'ai payé</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
     <script src="marche.js"></script>
 </body>

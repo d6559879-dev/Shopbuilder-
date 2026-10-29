@@ -1213,3 +1213,38 @@ a.carte-boutique:active {
     height: auto;
     aspect-ratio: 4 / 3;
 }
+
+
+/* Paiement mobile money */
+
+.boite-paiement {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin: 14px 0;
+    padding: 18px 14px;
+    text-align: center;
+    color: var(--encre-douce);
+
+    background: var(--g60);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon-petit);
+    box-shadow: var(--reflet);
+}
+
+.boite-paiement strong {
+    font-size: 22px;
+    color: var(--encre);
+}
+
+.boite-paiement .numero-paiement {
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--violet-texte);
+    user-select: all;
+}
+
+.boite-paiement .bouton-secondaire {
+    margin-top: 8px;
+}

@@ -245,6 +245,16 @@ async function ouvrirSession(user) {
         return;
     }
 
+    /* Arrivée depuis une vitrine après une commande en mobile money */
+
+    const aPayer = params.get("payer");
+
+    if (role === "acheteur" && aPayer && /^[0-9a-f-]{36}$/i.test(aPayer)) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirPaiement(aPayer);
+        return;
+    }
+
     const retour = params.get("retour");
 
     if (role === "acheteur" && retour &&
@@ -285,6 +295,76 @@ sb.auth.onAuthStateChange(function (evenement, session) {
 });
 
 
+/* ---------- Paiement mobile money ---------- */
+
+function montant(n, devise) {
+    return Number(n).toLocaleString("fr-FR") + " " + (devise === "USD" ? "$" : "FC");
+}
+
+function textePaiement(c) {
+    if (c.mode_paiement === "mobile_money") {
+        if (c.statut_paiement === "paye") return "✅ Payé par mobile money";
+        if (c.statut_paiement === "verification") {
+            return "🔎 Paiement envoyé, en cours de vérification par le vendeur";
+        }
+        return "💳 Mobile money : à payer";
+    }
+
+    return c.statut_paiement === "paye" ? "✅ Payé" : "💵 À payer à la livraison";
+}
+
+let commandeAPayer = null;
+
+async function ouvrirPaiement(id) {
+    const { data, error } = await sb.rpc("infos_paiement", { p_commande: id });
+
+    if (error || !data) {
+        alert("⚠️ Instructions de paiement indisponibles pour cette commande.");
+        return;
+    }
+
+    commandeAPayer = id;
+
+    $("p-boutique").textContent = "Commande chez " + (data.boutique || "la boutique");
+    $("p-montant").textContent = montant(data.montant, data.devise);
+    $("p-operateur").textContent = "par " + data.operateur + " au numéro :";
+    $("p-numero").textContent = data.numero;
+    $("p-reference").value = data.reference || "";
+
+    fermer("mes-commandes");
+    ouvrir("paiement");
+}
+
+async function copierNumeroPaiement() {
+    try {
+        await navigator.clipboard.writeText($("p-numero").textContent);
+        alert("📋 Numéro copié.");
+    } catch (e) {
+        alert("Copiez le numéro affiché à l'écran.");
+    }
+}
+
+async function declarerPaiement() {
+    const reference = $("p-reference").value.trim();
+
+    if (reference.length < 3) {
+        alert("⚠️ Entrez la référence de la transaction (au moins 3 caractères).");
+        return;
+    }
+
+    const { error } = await sb.rpc("declarer_paiement", {
+        p_commande: commandeAPayer,
+        p_reference: reference
+    });
+
+    if (error) { alert("⚠️ " + error.message); return; }
+
+    fermer("paiement");
+    alert("✅ Merci ! Le vendeur va vérifier votre paiement.");
+    ouvrirMesCommandes();
+}
+
+
 /* ---------- Mes commandes ---------- */
 
 async function ouvrirMesCommandes() {
@@ -309,8 +389,23 @@ async function ouvrirMesCommandes() {
             ligne(carte, "p", "🏪 " + (c.boutique_nom || "Boutique") + " · " +
                 new Date(c.created_at).toLocaleDateString("fr-FR"));
             ligne(carte, "p", icones[c.statut] + " " + c.statut);
-            ligne(carte, "strong", Number(c.total).toLocaleString("fr-FR") + " " +
-                (c.devise === "USD" ? "$" : "FC")).className = "produit-prix";
+            ligne(carte, "p", textePaiement(c));
+            ligne(carte, "strong", montant(c.total, c.devise)).className = "produit-prix";
+
+            if (c.mode_paiement === "mobile_money" && c.statut === "en attente" &&
+                c.statut_paiement !== "paye") {
+                const actions = document.createElement("div");
+                actions.className = "actions-produit";
+
+                const bt = document.createElement("button");
+                bt.type = "button";
+                bt.textContent = c.statut_paiement === "verification"
+                    ? "✏️ Corriger la référence" : "💳 Payer maintenant";
+                bt.addEventListener("click", () => ouvrirPaiement(c.id));
+
+                actions.appendChild(bt);
+                carte.appendChild(actions);
+            }
 
             liste.appendChild(carte);
         });

@@ -170,6 +170,25 @@ function ouvrirFormulaire(p, nom) {
     $("c-produit").textContent = p.nom + " — " + prix(p.prix);
     $("c-quantite").value = "1";
     $("c-quantite").max = Math.min(p.stock, 20);
+
+    /* Modes de paiement proposés par la boutique */
+    const choix = $("c-paiement");
+    choix.innerHTML = "";
+
+    const livraison = document.createElement("option");
+    livraison.value = "livraison";
+    livraison.textContent = "💵 Payer à la livraison";
+    choix.appendChild(livraison);
+
+    if (boutique.paiement_mobile) {
+        const mobile = document.createElement("option");
+        mobile.value = "mobile_money";
+        mobile.textContent = "📱 Mobile money (" + boutique.paiement_operateur + ")";
+        choix.appendChild(mobile);
+    }
+
+    $("c-paiement-bloc").hidden = !boutique.paiement_mobile;
+
     $("commande").classList.add("active");
 }
 
@@ -194,12 +213,15 @@ async function envoyerCommande() {
     const bt = $("c-bouton");
     bt.disabled = true;
 
-    const { error } = await sb.rpc("commander_vitrine", {
+    const mode = $("c-paiement").value || "livraison";
+
+    const { data: idCommande, error } = await sb.rpc("commander_vitrine", {
         p_slug: slug,
         p_produit: choisi.id,
         p_quantite: quantite,
         p_client: client,
-        p_telephone: telephone
+        p_telephone: telephone,
+        p_mode: mode
     });
 
     bt.disabled = false;
@@ -209,7 +231,15 @@ async function envoyerCommande() {
     $("c-client").value = "";
     $("c-telephone").value = "";
     fermerCommande();
-    alert("✅ Commande envoyée ! Retrouvez-la dans Mon compte, sur la page d'accueil.");
+
+    /* Mobile money : on passe directement aux instructions de paiement */
+    if (mode === "mobile_money" && idCommande) {
+        location.href = "index.html?payer=" + encodeURIComponent(idCommande);
+        return;
+    }
+
+    alert("✅ Commande envoyée ! Vous paierez à la livraison. " +
+        "Retrouvez-la dans Mon compte, sur la page d'accueil.");
 
     charger();
 }

@@ -121,6 +121,14 @@ async function creerBoutique() {
         return;
     }
 
+    const operateur = $("operateur-paiement").value;
+    const numeroPaiement = $("numero-paiement").value.trim();
+
+    if (operateur && numeroPaiement.length < 6) {
+        alert("⚠️ Entrez le numéro mobile money (au moins 6 chiffres) ou choisissez « Aucun ».");
+        return;
+    }
+
     const existait = !!boutique;
     const ancienChemin = boutique ? boutique.image_path || null : null;
     let imagePath = ancienChemin;
@@ -154,7 +162,9 @@ async function creerBoutique() {
         description: $("description").value.trim(),
         telephone: $("telephone").value.trim(),
         devise: $("devise").value,
-        image_path: imagePath
+        image_path: imagePath,
+        paiement_operateur: operateur || null,
+        paiement_numero: operateur ? numeroPaiement : null
     }, { onConflict: "user_id" });
 
     if (error) {
@@ -187,6 +197,9 @@ function ouvrirMaBoutique() {
     $("afficher-description").textContent = boutique.description || "Aucune description.";
     $("afficher-telephone").textContent = boutique.telephone || "-";
     $("afficher-devise").textContent = boutique.devise;
+    $("afficher-paiement").textContent = boutique.paiement_operateur
+        ? boutique.paiement_operateur + " · " + boutique.paiement_numero
+        : "Non activé";
     $("lien-vitrine").textContent = lienVitrine() || "-";
 
     const photo = $("afficher-photo");
@@ -211,6 +224,10 @@ function modifierBoutique() {
     $("description").value = boutique ? boutique.description || "" : "";
     $("telephone").value = boutique ? boutique.telephone || "" : "";
     $("devise").value = boutique ? boutique.devise : "FC";
+    $("operateur-paiement").value = boutique && boutique.paiement_operateur
+        ? boutique.paiement_operateur : "";
+    $("numero-paiement").value = boutique && boutique.paiement_numero
+        ? boutique.paiement_numero : "";
 
     viderPhotoBoutique();
 
@@ -589,6 +606,19 @@ async function enregistrerCommande() {
     afficherCommandes();
 }
 
+async function marquerPaye(id) {
+    if (!confirm("Confirmer que vous avez bien reçu ce paiement ?")) return;
+
+    const { error } = await sb.from("commandes")
+        .update({ statut_paiement: "paye" })
+        .eq("id", id).neq("statut", "annulée");
+
+    if (error) { echec(error); return; }
+
+    await charger();
+    afficherCommandes();
+}
+
 async function changerStatut(id, statut) {
     let resultat;
 
@@ -596,8 +626,20 @@ async function changerStatut(id, statut) {
         if (!confirm("Annuler cette commande ? Le stock sera remis.")) return;
         resultat = await sb.rpc("annuler_commande", { p_commande: id });
     } else {
+        const cmd = commandes.find(x => x.id === id);
+
+        if (cmd && cmd.mode_paiement === "mobile_money" && cmd.statut_paiement !== "paye" &&
+            !confirm("Le paiement mobile money n'est pas confirmé. Marquer quand même comme livrée ?")) {
+            return;
+        }
+
+        const maj = { statut: statut };
+
+        /* Payé à la livraison : la commande livrée est considérée payée */
+        if (cmd && cmd.mode_paiement === "livraison") maj.statut_paiement = "paye";
+
         resultat = await sb.from("commandes")
-            .update({ statut: statut })
+            .update(maj)
             .eq("id", id).eq("statut", "en attente");
     }
 
@@ -625,6 +667,22 @@ async function supprimerCommande(id) {
     afficherCommandes();
 }
 
+/* Texte d'état du paiement d'une commande */
+
+function textePaiement(c) {
+    const ref = c.reference_paiement ? " · Réf : " + c.reference_paiement : "";
+
+    if (c.mode_paiement === "mobile_money") {
+        if (c.statut_paiement === "paye") return "✅ Payé par mobile money" + ref;
+        if (c.statut_paiement === "verification") return "🔎 Mobile money à vérifier" + ref;
+        return "💳 Mobile money : en attente du paiement du client";
+    }
+
+    return c.statut_paiement === "paye"
+        ? "✅ Payé à la livraison"
+        : "💵 À encaisser à la livraison";
+}
+
 function afficherCommandes() {
     const liste = $("liste-commandes");
     const icones = { "en attente": "⏳", "livrée": "✅", "annulée": "❌" };
@@ -646,10 +704,15 @@ function afficherCommandes() {
             new Date(c.created_at).toLocaleDateString("fr-FR"));
         ligne(carte, "p", icones[c.statut] + " " + c.statut);
         if (c.client_telephone) ligne(carte, "p", "📞 " + c.client_telephone);
+        ligne(carte, "p", textePaiement(c));
         ligne(carte, "strong", prix(c.total)).className = "produit-prix";
 
         const actions = document.createElement("div");
         actions.className = "actions-produit";
+
+        if (c.statut !== "annulée" && c.statut_paiement !== "paye") {
+            actions.appendChild(bouton("💳 Marquer payé", () => marquerPaye(c.id)));
+        }
 
         if (c.statut === "en attente") {
             actions.appendChild(bouton("✅ Livrée", () => changerStatut(c.id, "livrée")));
