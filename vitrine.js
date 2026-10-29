@@ -73,7 +73,17 @@ function afficher() {
     $("v-description").textContent = boutique.description || "";
 
     if (boutique.image_path) {
-        const photo = $("v-photo");
+        let photo = $("v-photo");
+
+        /* Si la page n'a pas encore l'emplacement de la photo, on le crée */
+        if (!photo) {
+            photo = document.createElement("img");
+            photo.id = "v-photo";
+            photo.className = "photo-hero";
+            const entete = $("v-nom").parentElement;
+            entete.insertBefore(photo, entete.firstChild);
+        }
+
         photo.src = urlPhoto(boutique.image_path);
         photo.alt = boutique.nom;
         photo.hidden = false;
@@ -87,7 +97,7 @@ function afficher() {
         /* Même numéro pour WhatsApp */
         const numeroWa = numeroWhatsApp(boutique.telephone);
 
-        if (numeroWa) {
+        if (numeroWa && $("v-whatsapp")) {
             const wa = $("v-whatsapp");
             const message = "Bonjour, je vous contacte depuis votre boutique « " +
                 boutique.nom + " » sur Dukani.";
