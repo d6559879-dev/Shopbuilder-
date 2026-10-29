@@ -266,7 +266,12 @@ async function compresser(fichier) {
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * ratio);
     canvas.height = Math.round(img.height * ratio);
-    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    const ctx = canvas.getContext("2d");
+
+    /* Fond blanc : une photo transparente (PNG) ne devient pas noire en JPEG */
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     return new Promise(ok => canvas.toBlob(ok, "image/jpeg", 0.7));
 }
@@ -298,7 +303,10 @@ async function compresserCadre(fichier, largeur, hauteur) {
     const w = img.width * echelle;
     const h = img.height * echelle;
 
-    canvas.getContext("2d").drawImage(img, (largeur - w) / 2, (hauteur - h) / 2, w, h);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, largeur, hauteur);
+    ctx.drawImage(img, (largeur - w) / 2, (hauteur - h) / 2, w, h);
 
     return new Promise(ok => canvas.toBlob(ok, "image/jpeg", 0.8));
 }

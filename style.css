@@ -765,7 +765,8 @@ button:focus-visible,
 #apercu-produit {
     width: 150px;
     height: 150px;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fff;
     border-radius: 18px;
     border: 1px solid var(--verre-bord);
     box-shadow: var(--ombre);
@@ -809,7 +810,8 @@ button:focus-visible,
 .photo-produit {
     width: 150px;
     height: 150px;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fff;
     border-radius: 16px;
     margin-bottom: 12px;
 }
@@ -913,7 +915,8 @@ button:focus-visible,
 .photo-vitrine {
     width: 100%;
     aspect-ratio: 1;
-    object-fit: cover;
+    object-fit: contain;
+    background: #fff;
     margin-bottom: 12px;
     border-radius: 16px;
 }
