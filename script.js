@@ -249,6 +249,9 @@ async function supprimerBoutique() {
     const { data: statutsBoutique } = await sb.from("statuts").select("image_path");
     const cheminsStatuts = (statutsBoutique || []).map(s => s.image_path);
 
+    const { data: pubsBoutique } = await sb.from("publications").select("images");
+    const cheminsPubs = (pubsBoutique || []).flatMap(p => p.images || []);
+
     const { error } = await sb.from("boutiques")
         .delete().eq("user_id", utilisateur.id);
 
@@ -258,6 +261,9 @@ async function supprimerBoutique() {
 
     if (cheminsStatuts.length) await sb.storage.from("produits").remove(cheminsStatuts);
     await sb.from("statuts").delete().eq("user_id", utilisateur.id);
+
+    if (cheminsPubs.length) await sb.storage.from("produits").remove(cheminsPubs);
+    await sb.from("publications").delete().eq("user_id", utilisateur.id);
 
     await charger();
     fermerMaBoutique();
@@ -375,6 +381,170 @@ $("image-boutique").addEventListener("change", function () {
     };
     lecteur.readAsDataURL(fichier);
 });
+
+/* ---------- Publications (fil d'actualité) ---------- */
+
+async function ouvrirMesPublications() {
+    if (!boutique) {
+        alert("⚠️ Créez d'abord votre boutique.");
+        ouvrirCreation();
+        return;
+    }
+
+    ouvrir("publications");
+    await afficherMesPublications();
+}
+
+async function afficherMesPublications() {
+    const liste = $("liste-publications");
+
+    const { data, error } = await sb.from("publications")
+        .select("*").order("created_at", { ascending: false }).limit(30);
+
+    liste.textContent = "";
+
+    if (error) {
+        ligne(liste, "p", "⚠️ Impossible de charger vos publications.");
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        ligne(liste, "p", "Aucune publication pour le moment.");
+        return;
+    }
+
+    data.forEach(p => {
+        const carte = document.createElement("div");
+        carte.className = "produit-item";
+
+        if (p.images && p.images.length) {
+            const photo = document.createElement("img");
+            photo.src = urlPublique(p.images[0]);
+            photo.alt = "Publication";
+            photo.className = "photo-statut";
+            carte.appendChild(photo);
+        }
+
+        if (p.texte) ligne(carte, "p", p.texte.length > 140 ? p.texte.slice(0, 140) + "…" : p.texte);
+
+        const nbPhotos = p.images ? p.images.length : 0;
+        ligne(carte, "p", "📷 " + nbPhotos + (nbPhotos > 1 ? " photos" : " photo") +
+            " · " + new Date(p.created_at).toLocaleDateString("fr-FR"));
+
+        const actions = document.createElement("div");
+        actions.className = "actions-produit";
+        actions.appendChild(bouton("🗑️ Supprimer", () => supprimerPublication(p)));
+        carte.appendChild(actions);
+
+        liste.appendChild(carte);
+    });
+}
+
+async function publierPublication() {
+    const texte = $("texte-publication").value.trim();
+    const fichiers = Array.from($("images-publication").files).slice(0, 4);
+
+    if (!texte && fichiers.length === 0) {
+        alert("⚠️ Écrivez un texte ou ajoutez au moins une photo.");
+        return;
+    }
+
+    const bt = $("bouton-publication");
+    bt.disabled = true;
+
+    const chemins = [];
+
+    try {
+        for (const fichier of fichiers) {
+            const photo = await compresser(fichier, 900);
+            const chemin = utilisateur.id + "/publication-" + crypto.randomUUID() + ".jpg";
+
+            const { error } = await sb.storage.from("produits")
+                .upload(chemin, photo, { contentType: "image/jpeg" });
+
+            if (error) throw error;
+
+            chemins.push(chemin);
+        }
+
+        const { error: erreurPublication } = await sb.from("publications").insert({
+            texte: texte || null,
+            images: chemins
+        });
+
+        if (erreurPublication) throw erreurPublication;
+    } catch (e) {
+        if (chemins.length) await sb.storage.from("produits").remove(chemins);
+        bt.disabled = false;
+        echec(e);
+        return;
+    }
+
+    bt.disabled = false;
+
+    $("texte-publication").value = "";
+    $("images-publication").value = "";
+    $("apercus-publication").textContent = "";
+
+    await afficherMesPublications();
+    alert("✅ Publication envoyée sur le fil d'accueil.");
+}
+
+async function supprimerPublication(p) {
+    if (!confirm("Supprimer cette publication ?")) return;
+
+    if (p.images && p.images.length) {
+        await sb.storage.from("produits").remove(p.images);
+    }
+
+    const { error } = await sb.from("publications").delete().eq("id", p.id);
+
+    if (error) { echec(error); return; }
+
+    await afficherMesPublications();
+}
+
+$("images-publication").addEventListener("change", function () {
+    const zone = $("apercus-publication");
+    const fichiers = Array.from(this.files);
+
+    zone.textContent = "";
+
+    if (fichiers.length > 4) {
+        alert("⚠️ 4 photos au maximum : seules les 4 premières seront publiées.");
+    }
+
+    fichiers.slice(0, 4).forEach(fichier => {
+        if (!fichier.type.startsWith("image/")) return;
+
+        const lecteur = new FileReader();
+
+        lecteur.onload = e => {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            img.alt = "Aperçu";
+            zone.appendChild(img);
+        };
+
+        lecteur.readAsDataURL(fichier);
+    });
+});
+
+
+/* Ouverture directe depuis l'accueil : ?publier=1 ou ?statut=1 */
+
+function ouvrirDepuisAdresse() {
+    const params = new URLSearchParams(location.search);
+
+    if (params.get("publier")) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirMesPublications();
+    } else if (params.get("statut")) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirMesStatuts();
+    }
+}
+
 
 /* ---------- Statuts : nouveaux arrivages (24 h) ---------- */
 
@@ -1055,7 +1225,9 @@ async function demarrer(user) {
     $("auth").classList.add("cache");
 
     surveillerInactivite();
-    setTimeout(charger, 0);
+    setTimeout(async () => {
+        if (await charger()) ouvrirDepuisAdresse();
+    }, 0);
 }
 
 function arreter() {

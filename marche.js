@@ -41,6 +41,374 @@ function urlPhoto(chemin) {
 
 /* ---------- Boutiques ---------- */
 
+/* ---------- Onglets et barre du bas ---------- */
+
+function afficherOnglet(nom) {
+    $("onglet-accueil").hidden = nom !== "accueil";
+    $("onglet-boutiques").hidden = nom !== "boutiques";
+
+    document.querySelectorAll(".fb-barre button[data-onglet]").forEach(b => {
+        b.classList.toggle("actif", b.getAttribute("data-onglet") === nom);
+    });
+
+    window.scrollTo(0, 0);
+}
+
+function ouvrirRecherche() {
+    afficherOnglet("boutiques");
+    $("recherche").focus();
+}
+
+function ouvrirMessages() {
+    alert("💬 La messagerie entre vendeurs et acheteurs arrive bientôt.");
+}
+
+function ouvrirCommandesOnglet() {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    if (role === "vendeur") {
+        location.href = "vendeur.html";
+        return;
+    }
+
+    ouvrirMesCommandes();
+}
+
+/* Ce qui dépend du type de compte (bouton ＋ et carte « Créer un statut » pour les vendeurs) */
+
+function majInterfaceRole() {
+    $("btn-creer").hidden = role !== "vendeur";
+    afficherRangeeStatuts();
+    afficherFil();
+}
+
+
+/* ---------- Publications des boutiques (fil d'actualité) ---------- */
+
+const REACTIONS_PUB = [
+    { cle: "coeur", emoji: "❤️" },
+    { cle: "pouce", emoji: "👍" },
+    { cle: "feu", emoji: "🔥" },
+    { cle: "amour", emoji: "😍" }
+];
+
+let publications = [];
+let chargementFil = false;
+let filComplet = false;
+let filEnErreur = false;
+
+function tempsEcoule(iso) {
+    const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+
+    if (minutes < 1) return "à l'instant";
+    if (minutes < 60) return "il y a " + minutes + " min";
+    if (minutes < 1440) return "il y a " + Math.floor(minutes / 60) + " h";
+    return "il y a " + Math.floor(minutes / 1440) + " j";
+}
+
+async function chargerFil(suite) {
+    if (chargementFil) return;
+    chargementFil = true;
+
+    const avant = suite && publications.length
+        ? publications[publications.length - 1].created_at : null;
+
+    const { data, error } = await sb.rpc("fil_publications", {
+        p_avant: avant,
+        p_limite: 10
+    });
+
+    chargementFil = false;
+    filEnErreur = !!error || !Array.isArray(data);
+
+    if (!filEnErreur) {
+        if (!suite) publications = [];
+        publications = publications.concat(data);
+        filComplet = data.length < 10;
+    }
+
+    afficherFil();
+}
+
+function afficherFil() {
+    const liste = $("liste-fil");
+    liste.textContent = "";
+
+    if (filEnErreur && publications.length === 0) {
+        ligne(liste, "p", "⚠️ Impossible de charger les publications.").className = "fil-vide";
+    } else if (publications.length === 0) {
+        ligne(liste, "p", "Aucune publication pour le moment. Les boutiques partageront bientôt leurs nouveautés.").className = "fil-vide";
+    }
+
+    publications.forEach(p => liste.appendChild(creerCartePublication(p)));
+
+    $("plus-fil").hidden = filComplet || publications.length === 0;
+}
+
+function remplacerCarte(p) {
+    const ancienne = document.getElementById("pub-" + p.id);
+    if (ancienne) ancienne.replaceWith(creerCartePublication(p));
+}
+
+function creerCartePublication(p) {
+    const carte = document.createElement("article");
+    carte.className = "publication";
+    carte.id = "pub-" + p.id;
+
+    const allerBoutique = () => { location.href = "vitrine.html?b=" + encodeURIComponent(p.slug); };
+
+    /* En-tête : boutique et date */
+
+    const tete = document.createElement("div");
+    tete.className = "pub-tete";
+
+    const avatar = document.createElement("button");
+    avatar.type = "button";
+    avatar.className = "pub-avatar";
+    avatar.setAttribute("aria-label", "Voir la boutique " + p.nom);
+    avatar.addEventListener("click", allerBoutique);
+
+    if (p.logo) {
+        const logo = document.createElement("img");
+        logo.src = urlPhoto(p.logo);
+        logo.alt = "";
+        avatar.appendChild(logo);
+    } else {
+        avatar.textContent = "🏪";
+    }
+
+    const qui = document.createElement("div");
+    qui.className = "pub-qui";
+
+    const nom = document.createElement("button");
+    nom.type = "button";
+    nom.textContent = p.nom;
+    nom.addEventListener("click", allerBoutique);
+
+    const date = document.createElement("small");
+    date.textContent = tempsEcoule(p.created_at);
+
+    qui.appendChild(nom);
+    qui.appendChild(date);
+    tete.appendChild(avatar);
+    tete.appendChild(qui);
+    carte.appendChild(tete);
+
+    /* Texte */
+
+    if (p.texte) {
+        const texte = document.createElement("p");
+        texte.className = "pub-texte";
+        texte.textContent = p.texte;
+        carte.appendChild(texte);
+    }
+
+    /* Photos */
+
+    if (Array.isArray(p.images) && p.images.length) {
+        const grille = document.createElement("div");
+        grille.className = "pub-images g" + p.images.length;
+
+        p.images.forEach(chemin => {
+            const img = document.createElement("img");
+            img.src = urlPhoto(chemin);
+            img.alt = "Photo de " + p.nom;
+            img.loading = "lazy";
+            grille.appendChild(img);
+        });
+
+        carte.appendChild(grille);
+    }
+
+    /* Réactions */
+
+    const barre = document.createElement("div");
+    barre.className = "pub-reactions";
+
+    REACTIONS_PUB.forEach(r => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pub-reaction" + (p.ma_reaction === r.cle ? " actif" : "");
+        b.setAttribute("aria-label", "Réagir " + r.emoji);
+        b.textContent = r.emoji + " " + ((p.reactions && p.reactions[r.cle]) || 0);
+        b.addEventListener("click", () => reagirPublication(p, r.cle));
+        barre.appendChild(b);
+    });
+
+    carte.appendChild(barre);
+
+    /* Actions */
+
+    const actions = document.createElement("div");
+    actions.className = "pub-actions";
+
+    const commenter = document.createElement("button");
+    commenter.type = "button";
+    commenter.textContent = "💬 Commenter (" + (p.nb_commentaires || 0) + ")";
+    commenter.addEventListener("click", () => ouvrirCommentairesPub(p));
+
+    const voir = document.createElement("button");
+    voir.type = "button";
+    voir.textContent = "🏪 Voir la boutique";
+    voir.addEventListener("click", allerBoutique);
+
+    actions.appendChild(commenter);
+    actions.appendChild(voir);
+    carte.appendChild(actions);
+
+    return carte;
+}
+
+async function reagirPublication(p, cle) {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    const avant = { reactions: Object.assign({}, p.reactions), ma: p.ma_reaction };
+
+    /* Mise à jour immédiate, annulée en cas d'erreur */
+
+    p.reactions = Object.assign({}, p.reactions);
+
+    if (p.ma_reaction) {
+        p.reactions[p.ma_reaction] = Math.max(0, (p.reactions[p.ma_reaction] || 0) - 1);
+    }
+
+    if (p.ma_reaction === cle) {
+        p.ma_reaction = null;
+    } else {
+        p.reactions[cle] = (p.reactions[cle] || 0) + 1;
+        p.ma_reaction = cle;
+    }
+
+    remplacerCarte(p);
+
+    const { error } = await sb.rpc("reagir_publication", {
+        p_publication: p.id,
+        p_reaction: cle
+    });
+
+    if (error) {
+        p.reactions = avant.reactions;
+        p.ma_reaction = avant.ma;
+        remplacerCarte(p);
+        alert("⚠️ " + error.message);
+    }
+}
+
+
+/* ---------- Commentaires d'une publication ---------- */
+
+let publicationOuverte = null;
+
+async function ouvrirCommentairesPub(p) {
+    publicationOuverte = p;
+    $("champ-commentaire-pub").value = "";
+    ouvrir("commentaires-pub");
+    await chargerCommentairesPub();
+}
+
+async function chargerCommentairesPub() {
+    const liste = $("liste-commentaires-pub");
+    const p = publicationOuverte;
+    if (!p) return;
+
+    const { data, error } = await sb.rpc("publication_commentaires", {
+        p_publication: p.id
+    });
+
+    liste.textContent = "";
+
+    if (error || !Array.isArray(data)) {
+        ligne(liste, "p", "⚠️ Impossible de charger les commentaires.").className = "fil-vide";
+        return;
+    }
+
+    if (data.length === 0) {
+        ligne(liste, "p", "Aucun commentaire. Soyez le premier !").className = "fil-vide";
+    }
+
+    data.forEach(c => {
+        const ligneCommentaire = document.createElement("div");
+        ligneCommentaire.className = "commentaire-pub";
+
+        const haut = document.createElement("div");
+        haut.className = "commentaire-haut";
+
+        const auteur = document.createElement("strong");
+        auteur.textContent = c.auteur;
+        haut.appendChild(auteur);
+
+        if (c.par_boutique) {
+            const etiquette = document.createElement("span");
+            etiquette.className = "etiquette-boutique";
+            etiquette.textContent = "🏪 Boutique";
+            haut.appendChild(etiquette);
+        }
+
+        const quand = document.createElement("small");
+        quand.textContent = tempsEcoule(c.created_at);
+        haut.appendChild(quand);
+
+        if (c.peut_supprimer) {
+            const sup = document.createElement("button");
+            sup.type = "button";
+            sup.textContent = "🗑️";
+            sup.setAttribute("aria-label", "Supprimer ce commentaire");
+            sup.addEventListener("click", () => supprimerCommentairePub(c.id));
+            haut.appendChild(sup);
+        }
+
+        const texte = document.createElement("p");
+        texte.textContent = c.texte;
+
+        ligneCommentaire.appendChild(haut);
+        ligneCommentaire.appendChild(texte);
+        liste.appendChild(ligneCommentaire);
+    });
+
+    if (data.length < 50) p.nb_commentaires = data.length;
+    remplacerCarte(p);
+
+    liste.scrollTop = liste.scrollHeight;
+}
+
+async function envoyerCommentairePub() {
+    if (!utilisateur) {
+        fermer("commentaires-pub");
+        ouvrirAuth();
+        return;
+    }
+
+    const champ = $("champ-commentaire-pub");
+    const texte = champ.value.trim();
+
+    if (!texte || !publicationOuverte) return;
+
+    const { error } = await sb.rpc("commenter_publication", {
+        p_publication: publicationOuverte.id,
+        p_texte: texte
+    });
+
+    if (error) { alert("⚠️ " + error.message); return; }
+
+    champ.value = "";
+    await chargerCommentairesPub();
+}
+
+async function supprimerCommentairePub(id) {
+    if (!confirm("Supprimer ce commentaire ?")) return;
+
+    const { error } = await sb.rpc("supprimer_commentaire_publication", { p_id: id });
+
+    if (error) { alert("⚠️ " + error.message); return; }
+
+    await chargerCommentairesPub();
+}
+
+$("champ-commentaire-pub").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") envoyerCommentairePub();
+});
+
+
 /* ---------- Nouveaux arrivages (statuts) ---------- */
 
 let groupesStatuts = [];
@@ -48,40 +416,80 @@ let groupesStatuts = [];
 function afficherRangeeStatuts() {
     const zone = $("zone-statuts");
     const rangee = $("rangee-statuts");
+    const vendeur = role === "vendeur";
 
     rangee.textContent = "";
 
-    if (groupesStatuts.length === 0) {
+    if (!vendeur && groupesStatuts.length === 0) {
         zone.hidden = true;
         return;
     }
 
+    /* Première carte : créer un statut (vendeurs) */
+
+    if (vendeur) {
+        const creer = document.createElement("button");
+        creer.type = "button";
+        creer.className = "story-carte story-creer";
+        creer.setAttribute("aria-label", "Créer un statut");
+
+        const haut = document.createElement("div");
+        haut.className = "story-haut";
+        haut.textContent = "🏪";
+
+        const plus = document.createElement("div");
+        plus.className = "story-plus";
+        plus.textContent = "+";
+
+        const texte = document.createElement("span");
+        texte.className = "story-texte";
+        texte.textContent = "Créer un statut";
+
+        creer.appendChild(haut);
+        creer.appendChild(plus);
+        creer.appendChild(texte);
+        creer.addEventListener("click", () => { location.href = "vendeur.html?statut=1"; });
+
+        rangee.appendChild(creer);
+    }
+
     groupesStatuts.forEach((groupe, n) => {
-        const bouton = document.createElement("button");
-        bouton.type = "button";
-        bouton.className = "statut-rond";
-        bouton.setAttribute("aria-label", "Nouveaux arrivages de " + groupe.nom);
+        const carte = document.createElement("button");
+        carte.type = "button";
+        carte.className = "story-carte";
+        carte.setAttribute("aria-label", "Nouveaux arrivages de " + groupe.nom);
 
         if (window.statutsToutVus && window.statutsToutVus(groupe)) {
-            bouton.classList.add("vu");
+            carte.classList.add("vu");
         }
 
-        const anneau = document.createElement("div");
-        anneau.className = "anneau";
+        const fond = document.createElement("img");
+        fond.className = "story-fond";
+        fond.src = urlPhoto(groupe.statuts[groupe.statuts.length - 1].image_path);
+        fond.alt = "";
+        fond.loading = "lazy";
 
-        const photo = document.createElement("img");
-        photo.src = urlPhoto(groupe.statuts[groupe.statuts.length - 1].image_path);
-        photo.alt = "";
-        photo.loading = "lazy";
-        anneau.appendChild(photo);
+        const avatar = document.createElement("div");
+        avatar.className = "story-avatar";
+
+        if (groupe.logo) {
+            const logo = document.createElement("img");
+            logo.src = urlPhoto(groupe.logo);
+            logo.alt = "";
+            avatar.appendChild(logo);
+        } else {
+            avatar.textContent = "🏪";
+        }
 
         const nom = document.createElement("span");
+        nom.className = "story-nom";
         nom.textContent = groupe.nom;
 
-        bouton.appendChild(anneau);
-        bouton.appendChild(nom);
+        carte.appendChild(fond);
+        carte.appendChild(avatar);
+        carte.appendChild(nom);
 
-        bouton.addEventListener("click", () => {
+        carte.addEventListener("click", () => {
             window.ouvrirStatuts(groupesStatuts, n, {
                 urlPhoto: urlPhoto,
                 voirBoutique: true,
@@ -92,7 +500,7 @@ function afficherRangeeStatuts() {
             });
         });
 
-        rangee.appendChild(bouton);
+        rangee.appendChild(carte);
     });
 
     zone.hidden = false;
@@ -295,6 +703,7 @@ async function ouvrirSession(user) {
 
     role = profil ? profil.role : "acheteur";
     nomProfil = profil ? profil.nom : "";
+    majInterfaceRole();
 
     ["a-nom", "a-email", "a-mdp", "a-confirm"].forEach(id => { $(id).value = ""; });
     erreurAuth("");
@@ -345,6 +754,7 @@ async function deconnexion() {
     utilisateur = null;
     role = null;
     nomProfil = "";
+    majInterfaceRole();
 
     ["compte", "mes-commandes"].forEach(fermer);
     $("liste-mes-commandes").innerHTML = "";
@@ -356,6 +766,7 @@ sb.auth.onAuthStateChange(function (evenement, session) {
     } else if (!session && utilisateur) {
         utilisateur = null;
         role = null;
+        majInterfaceRole();
     }
 });
 
@@ -491,6 +902,7 @@ async function ouvrirMesCommandes() {
 
 chargerBoutiques();
 chargerStatuts();
+chargerFil(false);
 
 sb.auth.getSession().then(({ data }) => {
     if (!data.session && params.get("connexion")) ouvrirAuth();

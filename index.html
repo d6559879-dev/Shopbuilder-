@@ -11,49 +11,96 @@
 </head>
 <body>
 
-    <header class="header">
-        <div class="logo">🛍️ Dukani</div>
-        <div class="header-droite">
-            <button class="theme-btn" type="button" onclick="ouvrirParametres()" aria-label="Paramètres" title="Paramètres">⚙️</button>
-            <button class="menu" onclick="ouvrirCompte()" aria-label="Mon compte">👤</button>
+    <header class="fb-entete">
+        <button class="fb-rond" type="button" onclick="ouvrir('menu-accueil')" aria-label="Menu">☰</button>
+        <div class="fb-logo">dukani</div>
+        <div class="fb-actions">
+            <button id="btn-creer" class="fb-rond" type="button" onclick="location.href='vendeur.html?publier=1'" aria-label="Publier" hidden>＋</button>
+            <button class="fb-rond" type="button" onclick="ouvrirRecherche()" aria-label="Rechercher">🔍</button>
+            <button class="fb-rond" type="button" onclick="ouvrirMessages()" aria-label="Messages">💬</button>
         </div>
     </header>
 
-    <main class="accueil">
+    <main class="accueil fb-accueil">
 
-        <section class="hero">
-            <span class="badge">🛒 Place de marché</span>
-            <h1>Trouvez votre boutique <span>préférée.</span></h1>
-            <p>Parcourez les boutiques, découvrez leurs produits et commandez en quelques secondes.</p>
-            <input id="recherche" class="recherche" type="search" placeholder="🔍 Boutique ou produit..." maxlength="60" aria-label="Rechercher une boutique ou un produit">
+        <!-- ONGLET ACCUEIL : statuts + publications -->
+        <div id="onglet-accueil">
 
-            <div id="filtres" class="filtres" role="group" aria-label="Filtrer par catégorie">
-                <button type="button" class="filtre actif" data-cat="" aria-pressed="true">Toutes</button>
-                <button type="button" class="filtre" data-cat="Mode" aria-pressed="false">👕 Mode</button>
-                <button type="button" class="filtre" data-cat="Électronique" aria-pressed="false">📱 Électronique</button>
-                <button type="button" class="filtre" data-cat="Maison" aria-pressed="false">🏠 Maison</button>
-                <button type="button" class="filtre" data-cat="Alimentation" aria-pressed="false">🍔 Alimentation</button>
-                <button type="button" class="filtre" data-cat="Autre" aria-pressed="false">📦 Autre</button>
-            </div>
-        </section>
+            <section id="zone-statuts" class="zone-statuts" hidden>
+                <div id="rangee-statuts" class="rangee-statuts"></div>
+            </section>
 
-        <section id="zone-statuts" class="zone-statuts" hidden>
-            <h2>📣 Nouveaux arrivages</h2>
-            <div id="rangee-statuts" class="rangee-statuts"></div>
-        </section>
+            <section id="fil">
+                <div id="liste-fil"></div>
+                <button id="plus-fil" class="bouton-secondaire" type="button" onclick="chargerFil(true)" hidden>Voir plus de publications</button>
+            </section>
 
-        <section class="fonctionnalites">
-            <h2>Boutiques</h2>
-            <div id="liste-boutiques" class="grille-boutiques"></div>
-        </section>
+        </div>
 
-        <section class="hero hero-vendeur">
-            <h2>🏪 Vous vendez ?</h2>
-            <p>Créez votre boutique gratuitement et touchez de nouveaux clients.</p>
-            <a href="vendeur.html" class="bouton-principal">Ouvrir ma boutique</a>
-        </section>
+        <!-- ONGLET BOUTIQUES : recherche + filtres + liste -->
+        <div id="onglet-boutiques" hidden>
+
+            <section class="hero hero-recherche">
+                <input id="recherche" class="recherche" type="search" placeholder="🔍 Boutique ou produit..." maxlength="60" aria-label="Rechercher une boutique ou un produit">
+
+                <div id="filtres" class="filtres" role="group" aria-label="Filtrer par catégorie">
+                    <button type="button" class="filtre actif" data-cat="" aria-pressed="true">Toutes</button>
+                    <button type="button" class="filtre" data-cat="Mode" aria-pressed="false">👕 Mode</button>
+                    <button type="button" class="filtre" data-cat="Électronique" aria-pressed="false">📱 Électronique</button>
+                    <button type="button" class="filtre" data-cat="Maison" aria-pressed="false">🏠 Maison</button>
+                    <button type="button" class="filtre" data-cat="Alimentation" aria-pressed="false">🍔 Alimentation</button>
+                    <button type="button" class="filtre" data-cat="Autre" aria-pressed="false">📦 Autre</button>
+                </div>
+            </section>
+
+            <section class="fonctionnalites">
+                <h2>Boutiques</h2>
+                <div id="liste-boutiques" class="grille-boutiques"></div>
+            </section>
+
+            <section class="hero hero-vendeur">
+                <h2>🏪 Vous vendez ?</h2>
+                <p>Créez votre boutique gratuitement et touchez de nouveaux clients.</p>
+                <a href="vendeur.html" class="bouton-principal">Ouvrir ma boutique</a>
+            </section>
+
+        </div>
 
     </main>
+
+    <!-- BARRE DU BAS -->
+    <nav class="fb-barre" aria-label="Navigation principale">
+        <button type="button" class="actif" data-onglet="accueil" onclick="afficherOnglet('accueil')"><span>🏠</span>Accueil</button>
+        <button type="button" data-onglet="boutiques" onclick="afficherOnglet('boutiques')"><span>🏪</span>Boutiques</button>
+        <button type="button" onclick="ouvrirMessages()"><span>💬</span>Messages</button>
+        <button type="button" onclick="ouvrirCommandesOnglet()"><span>🛒</span>Commandes</button>
+        <button type="button" onclick="ouvrirCompte()"><span>👤</span>Compte</button>
+    </nav>
+
+    <!-- MENU -->
+    <div id="menu-accueil" class="fenetre">
+        <div class="creation-box">
+            <button class="fermer" onclick="fermer('menu-accueil')">✕</button>
+            <h2>☰ Menu</h2>
+            <button class="bouton-secondaire" onclick="fermer('menu-accueil'); ouvrirCompte()">👤 Mon compte</button>
+            <button class="bouton-secondaire" onclick="fermer('menu-accueil'); afficherOnglet('boutiques')">🏪 Toutes les boutiques</button>
+            <button class="bouton-secondaire" onclick="location.href='vendeur.html'">🏪 Espace vendeur</button>
+            <button class="bouton-secondaire" onclick="fermer('menu-accueil'); ouvrirParametres()">⚙️ Paramètres</button>
+        </div>
+    </div>
+
+    <!-- COMMENTAIRES D'UNE PUBLICATION -->
+    <div id="commentaires-pub" class="fenetre">
+        <div class="creation-box produits-box">
+            <button class="fermer" onclick="fermer('commentaires-pub')">✕</button>
+            <h2>💬 Commentaires</h2>
+            <div id="liste-commentaires-pub" class="liste-commentaires"></div>
+            <div class="saisie-commentaire">
+                <input id="champ-commentaire-pub" type="text" maxlength="300" placeholder="Écrire un commentaire…" aria-label="Votre commentaire">
+                <button type="button" onclick="envoyerCommentairePub()">Envoyer</button>
+            </div>
+        </div>
+    </div>
 
     <!-- CONNEXION ACHETEUR -->
     <div id="auth" class="fenetre">
