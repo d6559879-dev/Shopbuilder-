@@ -128,6 +128,20 @@
                 </div>
 
 
+                <div class="carte" onclick="ouvrirMesStatuts()">
+
+                    <div class="icone">📣</div>
+
+                    <h3>Arrivages</h3>
+
+                    <p>
+                        Publiez vos nouveaux
+                        arrivages en statut.
+                    </p>
+
+                </div>
+
+
                 <div class="carte" onclick="ouvrirStatistiques()">
 
                     <div class="icone">📊</div>
@@ -464,6 +478,34 @@
 
 
 
+    <!-- STATUTS -->
+    <div id="statuts" class="fenetre">
+        <div class="creation-box produits-box">
+            <button class="fermer" onclick="fermer('statuts')">✕</button>
+            <h2>📣 Nouveaux arrivages</h2>
+            <p class="sous-titre">
+                Publiez une photo : elle reste visible 24 h sur la place de marché
+                et sur votre vitrine. Les acheteurs peuvent réagir et commenter.
+            </p>
+
+            <label>Photo</label>
+            <input id="image-statut" type="file" accept="image/*">
+
+            <div class="apercu-image">
+                <img id="apercu-statut" alt="Aperçu du statut" style="display:none;">
+            </div>
+
+            <label>Légende (facultatif)</label>
+            <input id="legende-statut" type="text" maxlength="140" placeholder="Ex : Nouveaux sacs arrivés aujourd'hui !">
+
+            <button id="bouton-statut" class="creer" onclick="publierStatut()">Publier le statut</button>
+
+            <h3 class="titre-liste">Vos statuts en cours</h3>
+            <div id="liste-statuts"></div>
+        </div>
+    </div>
+
+
     <!-- MENU -->
     <div id="menu" class="fenetre">
         <div class="creation-box">
@@ -474,6 +516,7 @@
             <button class="bouton-secondaire" onclick="allerA(ouvrirProduits)">📦 Produits</button>
             <button class="bouton-secondaire" onclick="allerA(ouvrirCommandes)">🛒 Commandes</button>
             <button class="bouton-secondaire" onclick="allerA(ouvrirStatistiques)">📊 Statistiques</button>
+            <button class="bouton-secondaire" onclick="allerA(ouvrirMesStatuts)">📣 Nouveaux arrivages</button>
             <button class="bouton-secondaire" onclick="location.href='index.html'">🛒 Voir la place de marché</button>
             <button class="bouton-secondaire" onclick="fermer('menu'); ouvrirParametres()">⚙️ Paramètres</button>
             <button class="bouton-danger" onclick="deconnexion()">🚪 Se déconnecter</button>

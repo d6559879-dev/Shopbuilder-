@@ -41,6 +41,71 @@ function urlPhoto(chemin) {
 
 /* ---------- Boutiques ---------- */
 
+/* ---------- Nouveaux arrivages (statuts) ---------- */
+
+let groupesStatuts = [];
+
+function afficherRangeeStatuts() {
+    const zone = $("zone-statuts");
+    const rangee = $("rangee-statuts");
+
+    rangee.textContent = "";
+
+    if (groupesStatuts.length === 0) {
+        zone.hidden = true;
+        return;
+    }
+
+    groupesStatuts.forEach((groupe, n) => {
+        const bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.className = "statut-rond";
+        bouton.setAttribute("aria-label", "Nouveaux arrivages de " + groupe.nom);
+
+        if (window.statutsToutVus && window.statutsToutVus(groupe)) {
+            bouton.classList.add("vu");
+        }
+
+        const anneau = document.createElement("div");
+        anneau.className = "anneau";
+
+        const photo = document.createElement("img");
+        photo.src = urlPhoto(groupe.statuts[groupe.statuts.length - 1].image_path);
+        photo.alt = "";
+        photo.loading = "lazy";
+        anneau.appendChild(photo);
+
+        const nom = document.createElement("span");
+        nom.textContent = groupe.nom;
+
+        bouton.appendChild(anneau);
+        bouton.appendChild(nom);
+
+        bouton.addEventListener("click", () => {
+            window.ouvrirStatuts(groupesStatuts, n, {
+                urlPhoto: urlPhoto,
+                voirBoutique: true,
+                quandFerme: afficherRangeeStatuts,
+                rpc: (nomFonction, args) => sb.rpc(nomFonction, args),
+                connecte: () => !!utilisateur,
+                demanderConnexion: ouvrirAuth
+            });
+        });
+
+        rangee.appendChild(bouton);
+    });
+
+    zone.hidden = false;
+}
+
+async function chargerStatuts() {
+    const { data, error } = await sb.rpc("marche_statuts");
+
+    groupesStatuts = !error && Array.isArray(data) ? data : [];
+    afficherRangeeStatuts();
+}
+
+
 async function chargerBoutiques() {
     const terme = $("recherche").value.trim().slice(0, 60);
     const zone = $("liste-boutiques");
@@ -425,6 +490,7 @@ async function ouvrirMesCommandes() {
 /* ---------- Démarrage ---------- */
 
 chargerBoutiques();
+chargerStatuts();
 
 sb.auth.getSession().then(({ data }) => {
     if (!data.session && params.get("connexion")) ouvrirAuth();

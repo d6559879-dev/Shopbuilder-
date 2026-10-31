@@ -245,3 +245,42 @@ async function envoyerCommande() {
 }
 
 charger();
+
+
+/* ---------- Nouveaux arrivages (statuts) ---------- */
+
+let connecte = false;
+
+sb.auth.getSession().then(({ data }) => { connecte = !!data.session; });
+sb.auth.onAuthStateChange((evenement, session) => { connecte = !!session; });
+
+async function chargerStatutsBoutique() {
+    const { data, error } = await sb.rpc("statuts_boutique", { p_slug: slug });
+
+    if (error || !Array.isArray(data) || data.length === 0) return;
+
+    const bouton = $("v-statuts");
+    if (!bouton) return;
+
+    bouton.textContent = "📣 Nouveaux arrivages (" + data.length + ")";
+    bouton.hidden = false;
+
+    bouton.addEventListener("click", () => {
+        window.ouvrirStatuts(
+            [{ slug: slug, nom: boutique ? boutique.nom : "Boutique", statuts: data }],
+            0,
+            {
+                urlPhoto: urlPhoto,
+                voirBoutique: false,
+                rpc: (nomFonction, args) => sb.rpc(nomFonction, args),
+                connecte: () => connecte,
+                demanderConnexion: () => {
+                    location.href = "index.html?connexion=1&retour=" +
+                        encodeURIComponent("vitrine.html?b=" + slug);
+                }
+            }
+        );
+    });
+}
+
+chargerStatutsBoutique();

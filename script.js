@@ -246,12 +246,18 @@ async function supprimerBoutique() {
 
     const cheminPhoto = boutique ? boutique.image_path : null;
 
+    const { data: statutsBoutique } = await sb.from("statuts").select("image_path");
+    const cheminsStatuts = (statutsBoutique || []).map(s => s.image_path);
+
     const { error } = await sb.from("boutiques")
         .delete().eq("user_id", utilisateur.id);
 
     if (error) { echec(error); return; }
 
     if (cheminPhoto) await sb.storage.from("produits").remove([cheminPhoto]);
+
+    if (cheminsStatuts.length) await sb.storage.from("produits").remove(cheminsStatuts);
+    await sb.from("statuts").delete().eq("user_id", utilisateur.id);
 
     await charger();
     fermerMaBoutique();
@@ -261,7 +267,7 @@ async function supprimerBoutique() {
 
 /* ---------- Photo ---------- */
 
-async function compresser(fichier) {
+async function compresser(fichier, max = 600) {
     if (!fichier) return null;
 
     if (!fichier.type.startsWith("image/")) {
@@ -279,7 +285,7 @@ async function compresser(fichier) {
 
     URL.revokeObjectURL(url);
 
-    const ratio = Math.min(1, 600 / Math.max(img.width, img.height));
+    const ratio = Math.min(1, max / Math.max(img.width, img.height));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * ratio);
     canvas.height = Math.round(img.height * ratio);
@@ -366,6 +372,154 @@ $("image-boutique").addEventListener("change", function () {
         $("apercu-boutique").src = e.target.result;
         $("apercu-boutique").style.display = "block";
         $("retirer-photo-boutique").hidden = false;
+    };
+    lecteur.readAsDataURL(fichier);
+});
+
+/* ---------- Statuts : nouveaux arrivages (24 h) ---------- */
+
+const DUREE_STATUT = 24 * 60 * 60 * 1000;
+
+async function ouvrirMesStatuts() {
+    if (!boutique) {
+        alert("⚠️ Créez d'abord votre boutique.");
+        ouvrirCreation();
+        return;
+    }
+
+    ouvrir("statuts");
+    await afficherMesStatuts();
+}
+
+async function afficherMesStatuts() {
+    const liste = $("liste-statuts");
+
+    const { data, error } = await sb.from("statuts")
+        .select("*").order("created_at", { ascending: false });
+
+    liste.textContent = "";
+
+    if (error) {
+        ligne(liste, "p", "⚠️ Impossible de charger vos statuts.");
+        return;
+    }
+
+    const maintenant = Date.now();
+    const tous = data || [];
+    const expires = tous.filter(s => maintenant - new Date(s.created_at).getTime() >= DUREE_STATUT);
+    const actifs = tous.filter(s => maintenant - new Date(s.created_at).getTime() < DUREE_STATUT);
+
+    /* Nettoyage : les statuts de plus de 24 h sont supprimés avec leur photo */
+    if (expires.length) {
+        await sb.storage.from("produits").remove(expires.map(s => s.image_path));
+        await sb.from("statuts").delete().in("id", expires.map(s => s.id));
+    }
+
+    if (actifs.length === 0) {
+        ligne(liste, "p", "Aucun statut en cours.");
+        return;
+    }
+
+    actifs.forEach(s => {
+        const carte = document.createElement("div");
+        carte.className = "produit-item";
+
+        const photo = document.createElement("img");
+        photo.src = urlPublique(s.image_path);
+        photo.alt = "Statut";
+        photo.className = "photo-statut";
+        carte.appendChild(photo);
+
+        if (s.legende) ligne(carte, "p", s.legende);
+
+        const reste = DUREE_STATUT - (maintenant - new Date(s.created_at).getTime());
+        const heures = Math.floor(reste / 3600000);
+        const minutes = Math.floor((reste % 3600000) / 60000);
+        ligne(carte, "p", "⏳ Expire dans " + heures + " h " + minutes + " min");
+
+        const actions = document.createElement("div");
+        actions.className = "actions-produit";
+        actions.appendChild(bouton("🗑️ Supprimer", () => supprimerStatut(s)));
+        carte.appendChild(actions);
+
+        liste.appendChild(carte);
+    });
+}
+
+async function publierStatut() {
+    const fichier = $("image-statut").files[0];
+
+    if (!fichier) {
+        alert("⚠️ Choisissez une photo.");
+        return;
+    }
+
+    const bt = $("bouton-statut");
+    bt.disabled = true;
+
+    let chemin = null;
+
+    try {
+        const photo = await compresser(fichier, 900);
+
+        chemin = utilisateur.id + "/statut-" + crypto.randomUUID() + ".jpg";
+
+        const { error } = await sb.storage.from("produits")
+            .upload(chemin, photo, { contentType: "image/jpeg" });
+
+        if (error) { chemin = null; throw error; }
+
+        const { error: erreurStatut } = await sb.from("statuts").insert({
+            image_path: chemin,
+            legende: $("legende-statut").value.trim() || null
+        });
+
+        if (erreurStatut) throw erreurStatut;
+    } catch (e) {
+        if (chemin) await sb.storage.from("produits").remove([chemin]);
+        bt.disabled = false;
+        echec(e);
+        return;
+    }
+
+    bt.disabled = false;
+
+    $("image-statut").value = "";
+    $("legende-statut").value = "";
+    $("apercu-statut").removeAttribute("src");
+    $("apercu-statut").style.display = "none";
+
+    await afficherMesStatuts();
+    alert("✅ Statut publié, visible pendant 24 h.");
+}
+
+async function supprimerStatut(s) {
+    if (!confirm("Supprimer ce statut ?")) return;
+
+    await sb.storage.from("produits").remove([s.image_path]);
+
+    const { error } = await sb.from("statuts").delete().eq("id", s.id);
+
+    if (error) { echec(error); return; }
+
+    await afficherMesStatuts();
+}
+
+$("image-statut").addEventListener("change", function () {
+    const fichier = this.files[0];
+    const apercu = $("apercu-statut");
+
+    if (!fichier || !fichier.type.startsWith("image/")) {
+        this.value = "";
+        apercu.removeAttribute("src");
+        apercu.style.display = "none";
+        return;
+    }
+
+    const lecteur = new FileReader();
+    lecteur.onload = e => {
+        apercu.src = e.target.result;
+        apercu.style.display = "block";
     };
     lecteur.readAsDataURL(fichier);
 });
