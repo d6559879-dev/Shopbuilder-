@@ -2230,3 +2230,112 @@ a.carte-boutique:active {
     border: 1px solid var(--verre-bord);
     border-bottom-left-radius: 6px;
 }
+
+
+/* =====================================
+   ICÔNES (SVG, comme sur Facebook)
+===================================== */
+
+.ic {
+    display: block;
+    flex: none;
+    width: 1.25em;
+    height: 1.25em;
+    fill: currentColor;
+}
+
+.fb-rond {
+    padding: 0;
+}
+
+.fb-rond .ic {
+    width: 22px;
+    height: 22px;
+}
+
+.fb-barre .ic-boite {
+    display: grid;
+    place-items: center;
+    height: 28px;
+}
+
+.fb-barre .ic {
+    width: 27px;
+    height: 27px;
+}
+
+.fb-barre .ic-plein {
+    display: none;
+}
+
+.fb-barre button.actif .ic-plein {
+    display: block;
+}
+
+.fb-barre button.actif .ic-ligne {
+    display: none;
+}
+
+.avec-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.avec-icone .ic {
+    width: 22px;
+    height: 22px;
+}
+
+.theme-btn {
+    display: grid;
+    place-items: center;
+    padding: 0;
+}
+
+.theme-btn .ic {
+    width: 22px;
+    height: 22px;
+}
+
+.icone .ic {
+    width: 24px;
+    height: 24px;
+    color: var(--violet-texte);
+}
+
+.story-haut .ic {
+    width: 44px;
+    height: 44px;
+    color: var(--violet-texte);
+}
+
+.story-plus .ic {
+    width: 20px;
+    height: 20px;
+}
+
+.story-avatar .ic {
+    width: 22px;
+    height: 22px;
+    color: #fff;
+}
+
+.pub-avatar .ic {
+    width: 24px;
+    height: 24px;
+    color: var(--violet-texte);
+}
+
+.pub-actions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.pub-actions .ic {
+    width: 18px;
+    height: 18px;
+}

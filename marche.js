@@ -41,6 +41,22 @@ function urlPhoto(chemin) {
 
 /* ---------- Boutiques ---------- */
 
+/* ---------- Icônes (sprite SVG intégré à la page) ---------- */
+
+function iconeSvg(nom) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    const use = document.createElementNS(ns, "use");
+
+    svg.setAttribute("class", "ic");
+    svg.setAttribute("aria-hidden", "true");
+    use.setAttribute("href", "#ic-" + nom);
+    svg.appendChild(use);
+
+    return svg;
+}
+
+
 /* ---------- Onglets et barre du bas ---------- */
 
 function afficherOnglet(nom) {
@@ -386,7 +402,7 @@ function creerCartePublication(p) {
         logo.alt = "";
         avatar.appendChild(logo);
     } else {
-        avatar.textContent = "🏪";
+        avatar.appendChild(iconeSvg("store-plein"));
     }
 
     const qui = document.createElement("div");
@@ -456,12 +472,14 @@ function creerCartePublication(p) {
 
     const commenter = document.createElement("button");
     commenter.type = "button";
-    commenter.textContent = "💬 Commenter (" + (p.nb_commentaires || 0) + ")";
+    commenter.appendChild(iconeSvg("chat-ligne"));
+    commenter.appendChild(document.createTextNode("Commenter (" + (p.nb_commentaires || 0) + ")"));
     commenter.addEventListener("click", () => ouvrirCommentairesPub(p));
 
     const voir = document.createElement("button");
     voir.type = "button";
-    voir.textContent = "🏪 Voir la boutique";
+    voir.appendChild(iconeSvg("store-ligne"));
+    voir.appendChild(document.createTextNode("Voir la boutique"));
     voir.addEventListener("click", allerBoutique);
 
     actions.appendChild(commenter);
@@ -647,11 +665,11 @@ function afficherRangeeStatuts() {
 
         const haut = document.createElement("div");
         haut.className = "story-haut";
-        haut.textContent = "🏪";
+        haut.appendChild(iconeSvg("store-plein"));
 
         const plus = document.createElement("div");
         plus.className = "story-plus";
-        plus.textContent = "+";
+        plus.appendChild(iconeSvg("add"));
 
         const texte = document.createElement("span");
         texte.className = "story-texte";
@@ -690,7 +708,7 @@ function afficherRangeeStatuts() {
             logo.alt = "";
             avatar.appendChild(logo);
         } else {
-            avatar.textContent = "🏪";
+            avatar.appendChild(iconeSvg("store-plein"));
         }
 
         const nom = document.createElement("span");
