@@ -312,3 +312,33 @@ if (boutonDiscuter) {
         location.href = "index.html?conversation=" + encodeURIComponent(data);
     });
 }
+
+
+/* ---------- Paramètres : compte ---------- */
+
+window.remplirParametresCompte = function (zone) {
+    const titre = document.createElement("label");
+    titre.textContent = "Compte";
+    zone.appendChild(titre);
+
+    const bouton = document.createElement("button");
+    bouton.type = "button";
+
+    if (connecte) {
+        bouton.className = "bouton-danger";
+        bouton.textContent = "Se déconnecter";
+        bouton.addEventListener("click", async () => {
+            await sb.auth.signOut();
+            location.reload();
+        });
+    } else {
+        bouton.className = "bouton-secondaire";
+        bouton.textContent = "Se connecter ou créer un compte";
+        bouton.addEventListener("click", () => {
+            location.href = "index.html?connexion=1&retour=" +
+                encodeURIComponent("vitrine.html?b=" + slug);
+        });
+    }
+
+    zone.appendChild(bouton);
+};

@@ -103,79 +103,87 @@ async function ouvrirMessages() {
     await chargerConversations();
 }
 
+let conversationsCache = [];
+
 async function chargerConversations() {
     const liste = $("liste-conversations");
     const { data, error } = await sb.rpc("mes_conversations");
 
-    liste.textContent = "";
-
     if (error || !Array.isArray(data)) {
+        liste.textContent = "";
         ligne(liste, "p", "⚠️ Impossible de charger vos messages.").className = "fil-vide";
         return;
     }
 
-    if (data.length === 0) {
-        ligne(liste, "p", role === "vendeur"
-            ? "Aucun message. Vos clients vous écriront depuis votre vitrine."
-            : "Aucun message. Ouvrez une boutique et touchez « Discuter avec la boutique ».").className = "fil-vide";
-        majBadgeMessages();
+    conversationsCache = data;
+    afficherConversations();
+    majBadgeMessages();
+}
+
+function avatarConversation(logo, nom, classe) {
+    const avatar = document.createElement("div");
+    avatar.className = "conversation-avatar" + (classe ? " " + classe : "");
+
+    if (logo) {
+        const img = document.createElement("img");
+        img.src = urlPhoto(logo);
+        img.alt = "";
+        avatar.appendChild(img);
+    } else {
+        avatar.textContent = (nom || "?").trim().charAt(0).toUpperCase();
+    }
+
+    return avatar;
+}
+
+function afficherConversations() {
+    const liste = $("liste-conversations");
+    const filtre = $("recherche-conversations").value.trim().toLowerCase();
+
+    liste.textContent = "";
+
+    const visibles = conversationsCache.filter(c =>
+        !filtre || (c.autre_nom || "").toLowerCase().includes(filtre));
+
+    if (visibles.length === 0) {
+        ligne(liste, "p", conversationsCache.length
+            ? "Aucune discussion trouvée."
+            : role === "vendeur"
+                ? "Aucun message. Vos clients vous écriront depuis votre vitrine."
+                : "Aucun message. Ouvrez une boutique et touchez « Discuter avec la boutique ».").className = "fil-vide";
         return;
     }
 
-    data.forEach(c => {
-        const bouton = document.createElement("button");
-        bouton.type = "button";
-        bouton.className = "conversation";
-
-        const avatar = document.createElement("div");
-        avatar.className = "conversation-avatar";
-
-        if (c.autre_logo) {
-            const logo = document.createElement("img");
-            logo.src = urlPhoto(c.autre_logo);
-            logo.alt = "";
-            avatar.appendChild(logo);
-        } else {
-            avatar.textContent = (c.autre_nom || "?").trim().charAt(0).toUpperCase();
-        }
+    visibles.forEach(c => {
+        const ligneConversation = document.createElement("button");
+        ligneConversation.type = "button";
+        ligneConversation.className = "conversation" + (c.non_lus > 0 ? " non-lue" : "");
 
         const corps = document.createElement("div");
         corps.className = "conversation-corps";
 
-        const haut = document.createElement("div");
-        haut.className = "conversation-haut";
-
         const nom = document.createElement("strong");
         nom.textContent = c.autre_nom;
 
-        const quand = document.createElement("small");
-        quand.textContent = tempsEcoule(c.dernier_at);
-
-        haut.appendChild(nom);
-        haut.appendChild(quand);
-
         const apercu = document.createElement("p");
-        apercu.textContent = c.dernier_texte || "";
-        if (c.non_lus > 0) apercu.className = "non-lu";
+        apercu.textContent = (c.dernier_texte || "") + " · " + tempsEcoule(c.dernier_at);
 
-        corps.appendChild(haut);
+        corps.appendChild(nom);
         corps.appendChild(apercu);
 
-        bouton.appendChild(avatar);
-        bouton.appendChild(corps);
+        ligneConversation.appendChild(avatarConversation(c.autre_logo, c.autre_nom));
+        ligneConversation.appendChild(corps);
 
         if (c.non_lus > 0) {
-            const pastille = document.createElement("i");
-            pastille.className = "badge-nb badge-liste";
-            pastille.textContent = c.non_lus > 99 ? "99+" : String(c.non_lus);
-            bouton.appendChild(pastille);
+            const point = document.createElement("i");
+            point.className = "point-non-lu";
+            point.setAttribute("aria-label", c.non_lus + " message(s) non lu(s)");
+            ligneConversation.appendChild(point);
         }
 
-        bouton.addEventListener("click", () => ouvrirDiscussion(c.id));
-        liste.appendChild(bouton);
+        ligneConversation.addEventListener("click", () => ouvrirDiscussion(c.id));
+        liste.appendChild(ligneConversation);
     });
-
-    majBadgeMessages();
 }
 
 async function ouvrirDiscussion(id) {
@@ -183,7 +191,10 @@ async function ouvrirDiscussion(id) {
     signatureMessages = "";
 
     $("champ-message").value = "";
+    majBoutonEnvoyer();
     $("disc-titre").textContent = "Discussion";
+    $("disc-avatar").textContent = "";
+    $("disc-boutique").hidden = true;
     $("fil-messages").textContent = "";
 
     fermer("messagerie");
@@ -195,6 +206,15 @@ async function ouvrirDiscussion(id) {
     minuteurMessages = setInterval(() => {
         if (!document.hidden) chargerMessages(false);
     }, 5000);
+}
+
+function libelleHeure(iso) {
+    const date = new Date(iso);
+    const heure = date.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+    if (date.toDateString() === new Date().toDateString()) return heure;
+
+    return date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) + " " + heure;
 }
 
 async function chargerMessages(forcerBas) {
@@ -215,12 +235,22 @@ async function chargerMessages(forcerBas) {
 
     $("disc-titre").textContent = data.autre_nom;
 
+    const avatarEntete = $("disc-avatar");
+    avatarEntete.textContent = "";
+    const petit = avatarConversation(data.autre_logo, data.autre_nom, "petit");
+    while (petit.firstChild) avatarEntete.appendChild(petit.firstChild);
+
+    const boutonBoutique = $("disc-boutique");
+    boutonBoutique.hidden = !data.slug;
+    boutonBoutique.onclick = () => { location.href = "vitrine.html?b=" + encodeURIComponent(data.slug); };
+
     const signature = data.messages.map(msg => msg.id).join(",");
     if (signature === signatureMessages) return;
     signatureMessages = signature;
 
     const zone = $("fil-messages");
     const enBas = forcerBas || zone.scrollHeight - zone.scrollTop - zone.clientHeight < 80;
+    const ECART = 30 * 60000;
 
     zone.textContent = "";
 
@@ -228,20 +258,43 @@ async function chargerMessages(forcerBas) {
         ligne(zone, "p", "Dites bonjour 👋").className = "fil-vide";
     }
 
-    data.messages.forEach(msg => {
+    data.messages.forEach((msg, n) => {
+        const avant = data.messages[n - 1];
+        const apres = data.messages[n + 1];
+        const quand = new Date(msg.created_at).getTime();
+
+        if (!avant || quand - new Date(avant.created_at).getTime() > ECART) {
+            ligne(zone, "div", libelleHeure(msg.created_at)).className = "separateur-heure";
+        }
+
+        const suite = avant && avant.moi === msg.moi &&
+            quand - new Date(avant.created_at).getTime() <= ECART;
+        const suivi = apres && apres.moi === msg.moi &&
+            new Date(apres.created_at).getTime() - quand <= ECART;
+
         const bulle = document.createElement("div");
-        bulle.className = "bulle " + (msg.moi ? "moi" : "autre");
+        bulle.className = "bulle " + (msg.moi ? "moi" : "autre") +
+            (suite ? " suite" : "") + (suivi ? " suivi" : "");
+        bulle.textContent = msg.texte;
 
-        const texte = document.createElement("p");
-        texte.textContent = msg.texte;
+        if (msg.moi) {
+            zone.appendChild(bulle);
+            return;
+        }
 
-        const heure = document.createElement("small");
-        heure.textContent = new Date(msg.created_at)
-            .toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+        const rangee = document.createElement("div");
+        rangee.className = "rangee-bulle" + (suite ? " suite" : "");
 
-        bulle.appendChild(texte);
-        bulle.appendChild(heure);
-        zone.appendChild(bulle);
+        const miniature = document.createElement("div");
+        miniature.className = "mini-avatar";
+
+        if (!suivi) {
+            miniature.appendChild(avatarConversation(data.autre_logo, data.autre_nom, "mini"));
+        }
+
+        rangee.appendChild(miniature);
+        rangee.appendChild(bulle);
+        zone.appendChild(rangee);
     });
 
     if (enBas) zone.scrollTop = zone.scrollHeight;
@@ -255,6 +308,7 @@ async function envoyerMessage() {
     if (!texte || !conversationOuverte) return;
 
     champ.value = "";
+    majBoutonEnvoyer();
 
     const { error } = await sb.rpc("envoyer_message", {
         p_conversation: conversationOuverte,
@@ -263,6 +317,7 @@ async function envoyerMessage() {
 
     if (error) {
         champ.value = texte;
+        majBoutonEnvoyer();
         alert("⚠️ " + error.message);
         return;
     }
@@ -282,9 +337,17 @@ function fermerDiscussion() {
     ouvrirMessages();
 }
 
+function majBoutonEnvoyer() {
+    $("bouton-envoyer").hidden = $("champ-message").value.trim() === "";
+}
+
+$("champ-message").addEventListener("input", majBoutonEnvoyer);
+
 $("champ-message").addEventListener("keydown", function (e) {
     if (e.key === "Enter") envoyerMessage();
 });
+
+$("recherche-conversations").addEventListener("input", afficherConversations);
 
 setInterval(() => {
     if (utilisateur && !document.hidden) majBadgeMessages();
@@ -314,11 +377,47 @@ function majInterfaceRole() {
 /* ---------- Publications des boutiques (fil d'actualité) ---------- */
 
 const REACTIONS_PUB = [
-    { cle: "coeur", emoji: "❤️" },
-    { cle: "pouce", emoji: "👍" },
-    { cle: "feu", emoji: "🔥" },
-    { cle: "amour", emoji: "😍" }
+    { cle: "coeur", emoji: "❤️", libelle: "J'adore" },
+    { cle: "pouce", emoji: "👍", libelle: "J'aime" },
+    { cle: "feu", emoji: "🔥", libelle: "Top" },
+    { cle: "amour", emoji: "😍", libelle: "Craquant" }
 ];
+
+let pickerOuvert = null;
+
+function fermerPicker() {
+    if (pickerOuvert) {
+        pickerOuvert.remove();
+        pickerOuvert = null;
+    }
+}
+
+document.addEventListener("pointerdown", e => {
+    if (pickerOuvert && !e.target.closest(".pub-picker")) fermerPicker();
+}, true);
+
+function afficherPicker(p, conteneur) {
+    fermerPicker();
+
+    const picker = document.createElement("div");
+    picker.className = "pub-picker";
+
+    REACTIONS_PUB.forEach(r => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "picker-emoji";
+        b.textContent = r.emoji;
+        b.setAttribute("aria-label", r.libelle);
+        b.addEventListener("click", () => {
+            fermerPicker();
+            if (p.ma_reaction !== r.cle) reagirPublication(p, r.cle);
+        });
+        picker.appendChild(b);
+    });
+
+    conteneur.appendChild(picker);
+    pickerOuvert = picker;
+}
 
 let publications = [];
 let chargementFil = false;
@@ -448,40 +547,102 @@ function creerCartePublication(p) {
         carte.appendChild(grille);
     }
 
-    /* Réactions */
+    /* Résumé : réactions et commentaires */
 
-    const barre = document.createElement("div");
-    barre.className = "pub-reactions";
+    const total = Object.values(p.reactions || {}).reduce((s, n) => s + n, 0);
+    const nbCommentaires = p.nb_commentaires || 0;
 
-    REACTIONS_PUB.forEach(r => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "pub-reaction" + (p.ma_reaction === r.cle ? " actif" : "");
-        b.setAttribute("aria-label", "Réagir " + r.emoji);
-        b.textContent = r.emoji + " " + ((p.reactions && p.reactions[r.cle]) || 0);
-        b.addEventListener("click", () => reagirPublication(p, r.cle));
-        barre.appendChild(b);
-    });
+    if (total > 0 || nbCommentaires > 0) {
+        const resume = document.createElement("div");
+        resume.className = "pub-resume";
 
-    carte.appendChild(barre);
+        const gauche = document.createElement("span");
 
-    /* Actions */
+        if (total > 0) {
+            const emojis = REACTIONS_PUB
+                .filter(r => (p.reactions[r.cle] || 0) > 0)
+                .sort((x, y) => p.reactions[y.cle] - p.reactions[x.cle])
+                .slice(0, 3)
+                .map(r => r.emoji)
+                .join("");
+
+            gauche.textContent = emojis + " " + total;
+        }
+
+        resume.appendChild(gauche);
+
+        if (nbCommentaires > 0) {
+            const droite = document.createElement("button");
+            droite.type = "button";
+            droite.textContent = nbCommentaires + (nbCommentaires > 1 ? " commentaires" : " commentaire");
+            droite.addEventListener("click", () => ouvrirCommentairesPub(p));
+            resume.appendChild(droite);
+        }
+
+        carte.appendChild(resume);
+    }
+
+    /* Actions : J'aime (appui long = réactions), Commenter, Boutique */
 
     const actions = document.createElement("div");
     actions.className = "pub-actions";
 
+    const mienne = REACTIONS_PUB.find(r => r.cle === p.ma_reaction);
+
+    const jaime = document.createElement("button");
+    jaime.type = "button";
+    jaime.className = "pub-jaime" + (mienne ? " actif" : "");
+
+    if (mienne && mienne.cle !== "pouce") {
+        const emoji = document.createElement("span");
+        emoji.className = "pub-emoji";
+        emoji.textContent = mienne.emoji;
+        jaime.appendChild(emoji);
+    } else {
+        jaime.appendChild(iconeSvg(mienne ? "thumb-plein" : "thumb-ligne"));
+    }
+
+    jaime.appendChild(document.createTextNode(mienne ? mienne.libelle : "J'aime"));
+
+    let minuteurAppui = null;
+    let appuiLong = false;
+
+    jaime.addEventListener("pointerdown", () => {
+        appuiLong = false;
+        clearTimeout(minuteurAppui);
+        minuteurAppui = setTimeout(() => {
+            appuiLong = true;
+            afficherPicker(p, actions);
+        }, 420);
+    });
+
+    jaime.addEventListener("pointerup", () => {
+        clearTimeout(minuteurAppui);
+        if (!appuiLong) reagirPublication(p, p.ma_reaction || "pouce");
+    });
+
+    jaime.addEventListener("pointerleave", () => clearTimeout(minuteurAppui));
+    jaime.addEventListener("pointercancel", () => clearTimeout(minuteurAppui));
+    jaime.addEventListener("contextmenu", e => e.preventDefault());
+
+    /* Activation au clavier */
+    jaime.addEventListener("click", e => {
+        if (e.detail === 0) reagirPublication(p, p.ma_reaction || "pouce");
+    });
+
     const commenter = document.createElement("button");
     commenter.type = "button";
     commenter.appendChild(iconeSvg("chat-ligne"));
-    commenter.appendChild(document.createTextNode("Commenter (" + (p.nb_commentaires || 0) + ")"));
+    commenter.appendChild(document.createTextNode("Commenter"));
     commenter.addEventListener("click", () => ouvrirCommentairesPub(p));
 
     const voir = document.createElement("button");
     voir.type = "button";
     voir.appendChild(iconeSvg("store-ligne"));
-    voir.appendChild(document.createTextNode("Voir la boutique"));
+    voir.appendChild(document.createTextNode("Boutique"));
     voir.addEventListener("click", allerBoutique);
 
+    actions.appendChild(jaime);
     actions.appendChild(commenter);
     actions.appendChild(voir);
     carte.appendChild(actions);
@@ -984,15 +1145,57 @@ async function ouvrirSession(user) {
 }
 
 function ouvrirCompte() {
-    if (!utilisateur) { ouvrirAuth(); return; }
-
-    $("c-nom").textContent = nomProfil || "-";
-    $("c-email").textContent = utilisateur.email || "-";
-    $("c-acheteur").hidden = role === "vendeur";
-    $("c-vendeur").hidden = role !== "vendeur";
-
-    ouvrir("compte");
+    ouvrirParametres();
 }
+
+/* Section « Compte » de la fenêtre Paramètres */
+
+window.remplirParametresCompte = function (zone) {
+    const titre = document.createElement("label");
+    titre.textContent = "Compte";
+    zone.appendChild(titre);
+
+    const action = (texte, nomIcone, classe, fonction) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = classe + " avec-icone";
+        b.appendChild(iconeSvg(nomIcone));
+        b.appendChild(document.createTextNode(texte));
+        b.addEventListener("click", () => { window.fermerParametres(); fonction(); });
+        zone.appendChild(b);
+    };
+
+    if (!utilisateur) {
+        ligne(zone, "p", "Vous n'êtes pas connecté.").className = "sous-titre";
+        action("Se connecter ou créer un compte", "person-ligne", "bouton-secondaire", ouvrirAuth);
+        return;
+    }
+
+    const infos = document.createElement("div");
+    infos.className = "info-boutique";
+
+    [["Nom", nomProfil || "-"], ["Email", utilisateur.email || "-"]].forEach(([nom, valeur]) => {
+        const bloc = document.createElement("div");
+        const etiquette = document.createElement("span");
+        const contenu = document.createElement("strong");
+        etiquette.textContent = nom;
+        contenu.textContent = valeur;
+        contenu.style.wordBreak = "break-all";
+        bloc.appendChild(etiquette);
+        bloc.appendChild(contenu);
+        infos.appendChild(bloc);
+    });
+
+    zone.appendChild(infos);
+
+    if (role === "vendeur") {
+        action("Mon espace vendeur", "store-plein", "bouton-secondaire", () => { location.href = "vendeur.html"; });
+    } else {
+        action("Mes commandes", "cart-ligne", "bouton-secondaire", ouvrirMesCommandes);
+    }
+
+    action("Se déconnecter", "logout", "bouton-danger", deconnexion);
+};
 
 async function deconnexion() {
     await sb.auth.signOut();
@@ -1003,7 +1206,8 @@ async function deconnexion() {
     majInterfaceRole();
 
     quitterDiscussion();
-    ["compte", "mes-commandes", "messagerie"].forEach(fermer);
+    ["mes-commandes", "messagerie"].forEach(fermer);
+    window.fermerParametres();
     $("liste-mes-commandes").innerHTML = "";
 }
 
@@ -1134,7 +1338,7 @@ async function ouvrirMesCommandes() {
         });
     }
 
-    fermer("compte");
+    if (window.fermerParametres) window.fermerParametres();
     ouvrir("mes-commandes");
 }
 

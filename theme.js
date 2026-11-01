@@ -62,6 +62,9 @@
         var titre = document.createElement("h2");
         titre.textContent = "Paramètres";
 
+        var compte = document.createElement("div");
+        compte.id = "parametres-compte";
+
         var sousTitre = document.createElement("label");
         sousTitre.textContent = "Apparence";
 
@@ -93,6 +96,7 @@
 
         boite.appendChild(fermer);
         boite.appendChild(titre);
+        boite.appendChild(compte);
         boite.appendChild(sousTitre);
         boite.appendChild(groupe);
         boite.appendChild(aide);
@@ -105,6 +109,12 @@
     window.ouvrirParametres = function () {
         creerFenetre();
         marquer(lire());
+
+        /* Chaque page remplit la section « Compte » (connexion, déconnexion…) */
+        var zone = document.getElementById("parametres-compte");
+        zone.textContent = "";
+        if (window.remplirParametresCompte) window.remplirParametresCompte(zone);
+
         document.getElementById("parametres").classList.add("active");
     };
 

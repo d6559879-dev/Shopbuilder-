@@ -2339,3 +2339,339 @@ a.carte-boutique:active {
     width: 18px;
     height: 18px;
 }
+
+
+/* =====================================
+   MESSAGERIE FAÇON MESSENGER (plein écran)
+===================================== */
+
+.fenetre.page-plein {
+    z-index: 150;
+    align-items: stretch;
+    justify-content: stretch;
+    background: var(--fond);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.page-contenu {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 720px;
+    height: 100%;
+    margin: 0 auto;
+}
+
+.page-entete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px;
+    background: var(--verre);
+    -webkit-backdrop-filter: var(--flou);
+    backdrop-filter: var(--flou);
+    border-bottom: 1px solid var(--verre-bord);
+}
+
+.page-entete h2 {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    font-size: 21px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.page-bouton {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    color: var(--encre);
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.page-bouton .ic {
+    width: 24px;
+    height: 24px;
+}
+
+.page-recherche {
+    padding: 10px 14px 4px;
+}
+
+.page-recherche input {
+    width: 100%;
+    margin: 0;
+    padding: 11px 18px;
+    font-size: 16px;
+    border-radius: 999px;
+}
+
+.fenetre.page-plein .liste-conversations {
+    flex: 1;
+    margin: 0;
+    padding: 4px 6px 16px;
+    overflow-y: auto;
+}
+
+.conversation {
+    gap: 12px;
+    padding: 10px 8px;
+    border-bottom: none;
+    border-radius: 14px;
+}
+
+.conversation:active {
+    background: var(--g60);
+}
+
+.conversation-avatar {
+    width: 56px;
+    height: 56px;
+}
+
+.conversation-avatar.petit {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+}
+
+.conversation-avatar.mini {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+}
+
+.conversation-corps strong {
+    display: block;
+    overflow: hidden;
+    font-size: 16px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.conversation-corps p {
+    margin: 3px 0 0;
+}
+
+.conversation.non-lue .conversation-corps strong,
+.conversation.non-lue .conversation-corps p {
+    font-weight: 700;
+    color: var(--encre);
+}
+
+.point-non-lu {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    background: var(--violet);
+    border-radius: 50%;
+}
+
+/* Conversation */
+
+.fenetre.page-plein .fil-messages {
+    flex: 1;
+    height: auto;
+    gap: 2px;
+    margin: 0;
+    padding: 12px 10px;
+}
+
+.fil-messages > .bulle:not(.suite),
+.fil-messages > .rangee-bulle:not(.suite) {
+    margin-top: 8px;
+}
+
+.bulle {
+    max-width: 78%;
+    padding: 9px 14px;
+    font-size: 15px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.bulle.moi {
+    align-self: flex-end;
+    color: #fff;
+    background: linear-gradient(135deg, #7c3aed, #5b8cf5);
+    border: none;
+    border-radius: 20px;
+}
+
+.bulle.autre {
+    color: var(--encre);
+    background: var(--g85);
+    border: 1px solid var(--verre-bord);
+    border-radius: 20px;
+}
+
+.bulle.moi.suite { border-top-right-radius: 6px; }
+.bulle.moi.suivi { border-bottom-right-radius: 6px; }
+.bulle.autre.suite { border-top-left-radius: 6px; }
+.bulle.autre.suivi { border-bottom-left-radius: 6px; }
+
+.rangee-bulle {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.rangee-bulle .bulle {
+    align-self: auto;
+}
+
+.mini-avatar {
+    flex: none;
+    width: 28px;
+    height: 28px;
+}
+
+.separateur-heure {
+    align-self: center;
+    margin: 10px 0 4px;
+    font-size: 12px;
+    color: var(--encre-douce);
+}
+
+.barre-saisie {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    background: var(--verre);
+    -webkit-backdrop-filter: var(--flou);
+    backdrop-filter: var(--flou);
+    border-top: 1px solid var(--verre-bord);
+}
+
+.barre-saisie input {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 11px 18px;
+    font-size: 16px;
+    border-radius: 999px;
+}
+
+.barre-saisie button {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    color: #fff;
+    background: var(--violet);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.barre-saisie button .ic {
+    width: 22px;
+    height: 22px;
+}
+
+/* =====================================
+   J'AIME ET RÉACTIONS (appui long)
+===================================== */
+
+.pub-resume {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 0;
+    font-size: 14px;
+    color: var(--encre-douce);
+}
+
+.pub-resume button {
+    padding: 0;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--encre-douce);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.pub-actions {
+    position: relative;
+    gap: 4px;
+    margin-top: 10px;
+    padding: 6px 8px 0;
+    border-top: 1px solid var(--verre-bord);
+}
+
+.pub-actions button {
+    padding: 10px 4px;
+    color: var(--encre-douce);
+    background: none;
+    border: none;
+    border-radius: 10px;
+}
+
+.pub-actions button:active {
+    background: var(--g60);
+}
+
+.pub-jaime {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+}
+
+.pub-actions .pub-jaime.actif {
+    color: var(--violet-texte);
+}
+
+.pub-emoji {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.pub-picker {
+    position: absolute;
+    left: 8px;
+    bottom: calc(100% + 6px);
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    padding: 6px 10px;
+    background: var(--g96);
+    border: 1px solid var(--verre-bord);
+    border-radius: 999px;
+    box-shadow: var(--ombre);
+}
+
+.pub-actions .picker-emoji {
+    padding: 2px 4px;
+    font-size: 30px;
+    line-height: 1.1;
+    background: none;
+    transition: transform 0.12s ease;
+}
+
+.pub-actions .picker-emoji:active {
+    background: none;
+    transform: scale(1.35);
+}
+
+#parametres-compte {
+    margin-bottom: 8px;
+}
+
+#parametres-compte button {
+    margin-top: 10px;
+}

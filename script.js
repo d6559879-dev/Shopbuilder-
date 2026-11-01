@@ -531,6 +531,45 @@ $("images-publication").addEventListener("change", function () {
 });
 
 
+/* Section « Compte » de la fenêtre Paramètres */
+
+window.remplirParametresCompte = function (zone) {
+    const titre = document.createElement("label");
+    titre.textContent = "Compte";
+    zone.appendChild(titre);
+
+    if (utilisateur && utilisateur.email) {
+        const infos = document.createElement("div");
+        infos.className = "info-boutique";
+
+        const bloc = document.createElement("div");
+        const etiquette = document.createElement("span");
+        const contenu = document.createElement("strong");
+        etiquette.textContent = "Email";
+        contenu.textContent = utilisateur.email;
+        contenu.style.wordBreak = "break-all";
+        bloc.appendChild(etiquette);
+        bloc.appendChild(contenu);
+        infos.appendChild(bloc);
+        zone.appendChild(infos);
+    }
+
+    const place = document.createElement("button");
+    place.type = "button";
+    place.className = "bouton-secondaire";
+    place.textContent = "Voir la place de marché";
+    place.addEventListener("click", () => { location.href = "index.html"; });
+    zone.appendChild(place);
+
+    const sortir = document.createElement("button");
+    sortir.type = "button";
+    sortir.className = "bouton-danger";
+    sortir.textContent = "Se déconnecter";
+    sortir.addEventListener("click", () => { window.fermerParametres(); deconnexion(); });
+    zone.appendChild(sortir);
+};
+
+
 /* Ouverture directe depuis l'accueil : ?publier=1 ou ?statut=1 */
 
 function ouvrirDepuisAdresse() {
