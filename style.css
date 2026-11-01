@@ -2081,3 +2081,152 @@ a.carte-boutique:active {
     border-radius: 12px;
     border: 1px solid var(--verre-bord);
 }
+
+
+/* =====================================
+   MESSAGERIE
+===================================== */
+
+.avec-badge {
+    position: relative;
+}
+
+.badge-nb {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 6px);
+    display: grid;
+    place-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+    color: #fff;
+    background: #e11d48;
+    border-radius: 9px;
+}
+
+.liste-conversations {
+    margin-top: 10px;
+}
+
+.conversation {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 8px;
+    font-family: inherit;
+    text-align: left;
+    color: var(--encre);
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--verre-bord);
+    cursor: pointer;
+}
+
+.conversation-avatar {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    overflow: hidden;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--violet-clair), var(--violet));
+    border-radius: 50%;
+}
+
+.conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #fff;
+}
+
+.conversation-corps {
+    flex: 1;
+    min-width: 0;
+}
+
+.conversation-haut {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.conversation-haut small {
+    flex: 0 0 auto;
+    color: var(--encre-douce);
+}
+
+.conversation-corps p {
+    margin: 2px 0 0;
+    overflow: hidden;
+    font-size: 14px;
+    color: var(--encre-douce);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.conversation-corps p.non-lu {
+    font-weight: 700;
+    color: var(--encre);
+}
+
+.badge-liste {
+    position: static;
+    flex: 0 0 auto;
+}
+
+.fil-messages {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 48vh;
+    margin-top: 10px;
+    padding: 6px 2px;
+    overflow-y: auto;
+}
+
+.bulle {
+    max-width: 82%;
+    padding: 8px 12px 6px;
+    border-radius: 18px;
+}
+
+.bulle p {
+    margin: 0;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.bulle small {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    text-align: right;
+    opacity: 0.7;
+}
+
+.bulle.moi {
+    align-self: flex-end;
+    color: #fff;
+    background: var(--violet);
+    border-bottom-right-radius: 6px;
+}
+
+.bulle.autre {
+    align-self: flex-start;
+    color: var(--encre);
+    background: var(--g85);
+    border: 1px solid var(--verre-bord);
+    border-bottom-left-radius: 6px;
+}

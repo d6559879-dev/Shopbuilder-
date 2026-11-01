@@ -284,3 +284,31 @@ async function chargerStatutsBoutique() {
 }
 
 chargerStatutsBoutique();
+
+
+/* ---------- Discuter avec la boutique ---------- */
+
+const boutonDiscuter = $("v-discuter");
+
+if (boutonDiscuter) {
+    boutonDiscuter.addEventListener("click", async function () {
+        if (!connecte) {
+            location.href = "index.html?connexion=1&retour=" +
+                encodeURIComponent("vitrine.html?b=" + slug);
+            return;
+        }
+
+        boutonDiscuter.disabled = true;
+
+        const { data, error } = await sb.rpc("ouvrir_conversation", { p_slug: slug });
+
+        boutonDiscuter.disabled = false;
+
+        if (error || !data) {
+            alert("⚠️ " + (error ? error.message : "Impossible d'ouvrir la discussion."));
+            return;
+        }
+
+        location.href = "index.html?conversation=" + encodeURIComponent(data);
+    });
+}

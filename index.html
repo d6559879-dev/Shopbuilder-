@@ -72,7 +72,7 @@
     <nav class="fb-barre" aria-label="Navigation principale">
         <button type="button" class="actif" data-onglet="accueil" onclick="afficherOnglet('accueil')"><span>🏠</span>Accueil</button>
         <button type="button" data-onglet="boutiques" onclick="afficherOnglet('boutiques')"><span>🏪</span>Boutiques</button>
-        <button type="button" onclick="ouvrirMessages()"><span>💬</span>Messages</button>
+        <button type="button" class="avec-badge" onclick="ouvrirMessages()"><span>💬</span>Messages<i id="badge-messages" class="badge-nb" hidden></i></button>
         <button type="button" onclick="ouvrirCommandesOnglet()"><span>🛒</span>Commandes</button>
         <button type="button" onclick="ouvrirCompte()"><span>👤</span>Compte</button>
     </nav>
@@ -86,6 +86,28 @@
             <button class="bouton-secondaire" onclick="fermer('menu-accueil'); afficherOnglet('boutiques')">🏪 Toutes les boutiques</button>
             <button class="bouton-secondaire" onclick="location.href='vendeur.html'">🏪 Espace vendeur</button>
             <button class="bouton-secondaire" onclick="fermer('menu-accueil'); ouvrirParametres()">⚙️ Paramètres</button>
+        </div>
+    </div>
+
+    <!-- MESSAGERIE : LISTE DES CONVERSATIONS -->
+    <div id="messagerie" class="fenetre">
+        <div class="creation-box produits-box">
+            <button class="fermer" onclick="fermer('messagerie')">✕</button>
+            <h2>💬 Messages</h2>
+            <div id="liste-conversations" class="liste-conversations"></div>
+        </div>
+    </div>
+
+    <!-- MESSAGERIE : DISCUSSION -->
+    <div id="discussion" class="fenetre">
+        <div class="creation-box produits-box">
+            <button class="fermer" onclick="fermerDiscussion()">✕</button>
+            <h2 id="disc-titre">Discussion</h2>
+            <div id="fil-messages" class="fil-messages"></div>
+            <div class="saisie-commentaire">
+                <input id="champ-message" type="text" maxlength="1000" placeholder="Votre message…" aria-label="Votre message">
+                <button type="button" onclick="envoyerMessage()">Envoyer</button>
+            </div>
         </div>
     </div>
 

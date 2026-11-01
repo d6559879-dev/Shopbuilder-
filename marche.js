@@ -59,9 +59,220 @@ function ouvrirRecherche() {
     $("recherche").focus();
 }
 
-function ouvrirMessages() {
-    alert("💬 La messagerie entre vendeurs et acheteurs arrive bientôt.");
+/* ---------- Messagerie ---------- */
+
+let conversationOuverte = null;
+let minuteurMessages = null;
+let signatureMessages = "";
+
+async function majBadgeMessages() {
+    const badge = $("badge-messages");
+
+    if (!utilisateur) {
+        badge.hidden = true;
+        return;
+    }
+
+    const { data, error } = await sb.rpc("messages_non_lus");
+    const n = !error && typeof data === "number" ? data : 0;
+
+    badge.textContent = n > 99 ? "99+" : String(n);
+    badge.hidden = n === 0;
 }
+
+async function ouvrirMessages() {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    ouvrir("messagerie");
+    await chargerConversations();
+}
+
+async function chargerConversations() {
+    const liste = $("liste-conversations");
+    const { data, error } = await sb.rpc("mes_conversations");
+
+    liste.textContent = "";
+
+    if (error || !Array.isArray(data)) {
+        ligne(liste, "p", "⚠️ Impossible de charger vos messages.").className = "fil-vide";
+        return;
+    }
+
+    if (data.length === 0) {
+        ligne(liste, "p", role === "vendeur"
+            ? "Aucun message. Vos clients vous écriront depuis votre vitrine."
+            : "Aucun message. Ouvrez une boutique et touchez « Discuter avec la boutique ».").className = "fil-vide";
+        majBadgeMessages();
+        return;
+    }
+
+    data.forEach(c => {
+        const bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.className = "conversation";
+
+        const avatar = document.createElement("div");
+        avatar.className = "conversation-avatar";
+
+        if (c.autre_logo) {
+            const logo = document.createElement("img");
+            logo.src = urlPhoto(c.autre_logo);
+            logo.alt = "";
+            avatar.appendChild(logo);
+        } else {
+            avatar.textContent = (c.autre_nom || "?").trim().charAt(0).toUpperCase();
+        }
+
+        const corps = document.createElement("div");
+        corps.className = "conversation-corps";
+
+        const haut = document.createElement("div");
+        haut.className = "conversation-haut";
+
+        const nom = document.createElement("strong");
+        nom.textContent = c.autre_nom;
+
+        const quand = document.createElement("small");
+        quand.textContent = tempsEcoule(c.dernier_at);
+
+        haut.appendChild(nom);
+        haut.appendChild(quand);
+
+        const apercu = document.createElement("p");
+        apercu.textContent = c.dernier_texte || "";
+        if (c.non_lus > 0) apercu.className = "non-lu";
+
+        corps.appendChild(haut);
+        corps.appendChild(apercu);
+
+        bouton.appendChild(avatar);
+        bouton.appendChild(corps);
+
+        if (c.non_lus > 0) {
+            const pastille = document.createElement("i");
+            pastille.className = "badge-nb badge-liste";
+            pastille.textContent = c.non_lus > 99 ? "99+" : String(c.non_lus);
+            bouton.appendChild(pastille);
+        }
+
+        bouton.addEventListener("click", () => ouvrirDiscussion(c.id));
+        liste.appendChild(bouton);
+    });
+
+    majBadgeMessages();
+}
+
+async function ouvrirDiscussion(id) {
+    conversationOuverte = id;
+    signatureMessages = "";
+
+    $("champ-message").value = "";
+    $("disc-titre").textContent = "Discussion";
+    $("fil-messages").textContent = "";
+
+    fermer("messagerie");
+    ouvrir("discussion");
+
+    await chargerMessages(true);
+
+    clearInterval(minuteurMessages);
+    minuteurMessages = setInterval(() => {
+        if (!document.hidden) chargerMessages(false);
+    }, 5000);
+}
+
+async function chargerMessages(forcerBas) {
+    const id = conversationOuverte;
+    if (!id) return;
+
+    const { data, error } = await sb.rpc("messages_conversation", { p_conversation: id });
+
+    if (id !== conversationOuverte) return;
+
+    if (error || !data) {
+        if (forcerBas) {
+            alert("⚠️ Conversation introuvable.");
+            quitterDiscussion();
+        }
+        return;
+    }
+
+    $("disc-titre").textContent = data.autre_nom;
+
+    const signature = data.messages.map(msg => msg.id).join(",");
+    if (signature === signatureMessages) return;
+    signatureMessages = signature;
+
+    const zone = $("fil-messages");
+    const enBas = forcerBas || zone.scrollHeight - zone.scrollTop - zone.clientHeight < 80;
+
+    zone.textContent = "";
+
+    if (data.messages.length === 0) {
+        ligne(zone, "p", "Dites bonjour 👋").className = "fil-vide";
+    }
+
+    data.messages.forEach(msg => {
+        const bulle = document.createElement("div");
+        bulle.className = "bulle " + (msg.moi ? "moi" : "autre");
+
+        const texte = document.createElement("p");
+        texte.textContent = msg.texte;
+
+        const heure = document.createElement("small");
+        heure.textContent = new Date(msg.created_at)
+            .toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+        bulle.appendChild(texte);
+        bulle.appendChild(heure);
+        zone.appendChild(bulle);
+    });
+
+    if (enBas) zone.scrollTop = zone.scrollHeight;
+    majBadgeMessages();
+}
+
+async function envoyerMessage() {
+    const champ = $("champ-message");
+    const texte = champ.value.trim();
+
+    if (!texte || !conversationOuverte) return;
+
+    champ.value = "";
+
+    const { error } = await sb.rpc("envoyer_message", {
+        p_conversation: conversationOuverte,
+        p_texte: texte
+    });
+
+    if (error) {
+        champ.value = texte;
+        alert("⚠️ " + error.message);
+        return;
+    }
+
+    await chargerMessages(true);
+}
+
+function quitterDiscussion() {
+    clearInterval(minuteurMessages);
+    conversationOuverte = null;
+    signatureMessages = "";
+    fermer("discussion");
+}
+
+function fermerDiscussion() {
+    quitterDiscussion();
+    ouvrirMessages();
+}
+
+$("champ-message").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") envoyerMessage();
+});
+
+setInterval(() => {
+    if (utilisateur && !document.hidden) majBadgeMessages();
+}, 30000);
 
 function ouvrirCommandesOnglet() {
     if (!utilisateur) { ouvrirAuth(); return; }
@@ -80,6 +291,7 @@ function majInterfaceRole() {
     $("btn-creer").hidden = role !== "vendeur";
     afficherRangeeStatuts();
     afficherFil();
+    majBadgeMessages();
 }
 
 
@@ -729,6 +941,22 @@ async function ouvrirSession(user) {
         return;
     }
 
+    /* Arrivée depuis une vitrine (« Discuter ») ou depuis l'espace vendeur (« Messages ») */
+
+    const aDiscuter = params.get("conversation");
+
+    if (aDiscuter && /^[0-9a-f-]{36}$/i.test(aDiscuter)) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirDiscussion(aDiscuter);
+        return;
+    }
+
+    if (params.get("messages")) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirMessages();
+        return;
+    }
+
     const retour = params.get("retour");
 
     if (role === "acheteur" && retour &&
@@ -756,7 +984,8 @@ async function deconnexion() {
     nomProfil = "";
     majInterfaceRole();
 
-    ["compte", "mes-commandes"].forEach(fermer);
+    quitterDiscussion();
+    ["compte", "mes-commandes", "messagerie"].forEach(fermer);
     $("liste-mes-commandes").innerHTML = "";
 }
 
@@ -905,5 +1134,5 @@ chargerStatuts();
 chargerFil(false);
 
 sb.auth.getSession().then(({ data }) => {
-    if (!data.session && params.get("connexion")) ouvrirAuth();
+    if (!data.session && (params.get("connexion") || params.get("messages"))) ouvrirAuth();
 });
