@@ -754,7 +754,8 @@ button:focus-visible,
 .creation-box #image-produit,
 .creation-box #image-boutique,
 .creation-box #image-statut,
-.creation-box #images-publication {
+.creation-box #images-publication,
+.creation-box #pub-image {
     padding: 12px;
     font-size: 14px;
 }
@@ -2902,4 +2903,164 @@ a.carte-boutique:active {
 .choix-icone .ic {
     width: 26px;
     height: 26px;
+}
+
+
+/* =====================================
+   FIL : FILTRE, SUIVRE, ENREGISTRER, SPONSORISÉ
+===================================== */
+
+.fil-onglets {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0 2px;
+}
+
+.fil-onglets button {
+    flex: 1;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--encre);
+    background: var(--g60);
+    border: 1.5px solid var(--verre-bord);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.fil-onglets button.actif {
+    color: #fff;
+    background: linear-gradient(135deg, var(--violet-clair), var(--violet));
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pub-suivre {
+    flex: none;
+    margin-left: auto;
+    padding: 7px 14px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--violet-texte);
+    background: rgba(124, 58, 237, 0.12);
+    border: 1.5px solid var(--violet-clair);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.pub-suivre.actif {
+    color: var(--encre-douce);
+    background: none;
+    border-color: var(--verre-bord);
+}
+
+.pub-actions .pub-enregistrer {
+    flex: 0 0 48px;
+}
+
+.pub-actions .pub-enregistrer.actif {
+    color: var(--violet-texte);
+}
+
+.sponsorisee .pub-qui small {
+    font-weight: 600;
+}
+
+.pub-voir {
+    padding: 12px 14px 0;
+}
+
+.rangee-suivi {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 6px;
+}
+
+.rangee-suivi .conversation {
+    flex: 1;
+    min-width: 0;
+}
+
+.bouton-petit {
+    flex: none;
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--encre);
+    background: var(--g60);
+    border: 1px solid var(--verre-bord);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+
+/* Suivre, publicité, administration */
+
+.bouton-suivre {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.bouton-suivre .ic {
+    width: 20px;
+    height: 20px;
+}
+
+.bouton-suivre.suivi {
+    color: var(--encre);
+    background: var(--g85);
+    box-shadow: none;
+}
+
+.texte-gauche {
+    align-items: flex-start;
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.resume-admin {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.resume-carte {
+    padding: 12px 8px;
+    text-align: center;
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 16px;
+}
+
+.resume-carte strong {
+    display: block;
+    font-size: 20px;
+}
+
+.resume-carte small {
+    color: var(--encre-douce);
+}
+
+.formulaire-ligne {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.formulaire-ligne input,
+.formulaire-ligne select {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+}
+
+.fil-onglets.enveloppe {
+    flex-wrap: wrap;
 }

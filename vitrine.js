@@ -66,11 +66,54 @@ function numeroWhatsApp(brut) {
     return chiffres.length >= 9 && chiffres.length <= 15 ? chiffres : "";
 }
 
+/* Icône du sprite SVG de la page */
+
+function iconeVitrine(nom) {
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(ns, "svg");
+    const use = document.createElementNS(ns, "use");
+
+    svg.setAttribute("class", "ic");
+    svg.setAttribute("aria-hidden", "true");
+    use.setAttribute("href", "#ic-" + nom);
+    svg.appendChild(use);
+
+    return svg;
+}
+
+function allerSeConnecter() {
+    location.href = "index.html?connexion=1&retour=" +
+        encodeURIComponent("vitrine.html?b=" + slug);
+}
+
+/* Bouton « Suivre » avec le nombre d'abonnés */
+
+function majBoutonSuivre() {
+    const b = $("v-suivre");
+    if (!b) return;
+
+    if (boutique.ma_boutique) {
+        b.hidden = true;
+        return;
+    }
+
+    const n = boutique.abonnes || 0;
+
+    b.hidden = false;
+    b.textContent = "";
+    b.classList.toggle("suivi", !!boutique.suivi);
+    b.appendChild(iconeVitrine(boutique.suivi ? "check" : "add"));
+    b.appendChild(document.createTextNode(
+        (boutique.suivi ? "Suivie" : "Suivre") +
+        (n > 0 ? " · " + n + (n > 1 ? " abonnés" : " abonné") : "")));
+}
+
 function afficher() {
     document.title = boutique.nom;
     $("v-logo").textContent = boutique.nom;
     $("v-nom").textContent = boutique.nom;
     $("v-description").textContent = boutique.description || "";
+    majBoutonSuivre();
 
     if (boutique.image_path) {
         let photo = $("v-photo");
@@ -140,6 +183,33 @@ function afficher() {
         bt.className = "creer";
         bt.disabled = !dispo;
         bt.addEventListener("click", () => ouvrirCommande(p));
+
+        /* Enregistrer le produit pour plus tard */
+
+        const enregistrer = document.createElement("button");
+        enregistrer.type = "button";
+        enregistrer.className = "bouton-secondaire avec-icone";
+
+        const majEnregistrer = () => {
+            enregistrer.textContent = "";
+            enregistrer.appendChild(iconeVitrine(p.enregistre ? "bookmark-plein" : "bookmark-ligne"));
+            enregistrer.appendChild(document.createTextNode(p.enregistre ? "Enregistré" : "Enregistrer"));
+        };
+
+        majEnregistrer();
+
+        enregistrer.addEventListener("click", async () => {
+            if (!connecte) { allerSeConnecter(); return; }
+
+            const { data, error } = await sb.rpc("basculer_enregistrement_produit", { p_produit: p.id });
+
+            if (error) { alert("⚠️ " + error.message); return; }
+
+            p.enregistre = data === true;
+            majEnregistrer();
+        });
+
+        carte.appendChild(enregistrer);
 
         zone.appendChild(carte);
     });
@@ -342,3 +412,28 @@ window.remplirParametresCompte = function (zone) {
 
     zone.appendChild(bouton);
 };
+
+
+/* ---------- Suivre la boutique ---------- */
+
+const boutonSuivre = $("v-suivre");
+
+if (boutonSuivre) {
+    boutonSuivre.addEventListener("click", async () => {
+        if (!connecte) { allerSeConnecter(); return; }
+
+        boutonSuivre.disabled = true;
+
+        const { data, error } = await sb.rpc("basculer_abonnement", { p_slug: slug });
+
+        boutonSuivre.disabled = false;
+
+        if (error) { alert("⚠️ " + error.message); return; }
+
+        const suivi = data === true;
+
+        boutique.suivi = suivi;
+        boutique.abonnes = Math.max(0, (boutique.abonnes || 0) + (suivi ? 1 : -1));
+        majBoutonSuivre();
+    });
+}

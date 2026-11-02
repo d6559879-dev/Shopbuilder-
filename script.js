@@ -382,6 +382,204 @@ $("image-boutique").addEventListener("change", function () {
     lecteur.readAsDataURL(fichier);
 });
 
+/* ---------- Publicité (payante, durée limitée) ---------- */
+
+async function ouvrirMaPublicite() {
+    if (!boutique) {
+        alert("⚠️ Créez d'abord votre boutique.");
+        ouvrirCreation();
+        return;
+    }
+
+    ouvrir("publicite");
+    await chargerInfosPub();
+    await afficherMesPublicites();
+}
+
+async function chargerInfosPub() {
+    const { data, error } = await sb.rpc("pub_infos");
+    const infos = !error && data ? data : { tarifs: [], instructions: "" };
+
+    const choix = $("pub-tarif");
+    choix.textContent = "";
+
+    if (!infos.tarifs || infos.tarifs.length === 0) {
+        const vide = document.createElement("option");
+        vide.value = "";
+        vide.textContent = "Aucun tarif disponible pour le moment";
+        choix.appendChild(vide);
+        $("pub-envoyer").disabled = true;
+    } else {
+        infos.tarifs.forEach(t => {
+            const option = document.createElement("option");
+            option.value = t.id;
+            option.textContent = t.duree_jours + (t.duree_jours > 1 ? " jours" : " jour") + " : " +
+                Number(t.prix).toLocaleString("fr-FR") + " " + (t.devise === "USD" ? "$" : "FC");
+            choix.appendChild(option);
+        });
+        $("pub-envoyer").disabled = false;
+    }
+
+    $("pub-instructions").textContent = infos.instructions || "";
+    $("pub-paiement").hidden = !infos.instructions;
+}
+
+function etatPublicite(pu) {
+    const debut = pu.debut ? new Date(pu.debut).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "";
+    const fin = pu.fin ? new Date(pu.fin).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "";
+
+    if (pu.etat === "active") return "En ligne du " + debut + " au " + fin;
+    if (pu.etat === "terminee") return "Terminée (du " + debut + " au " + fin + ")";
+    if (pu.etat === "pause") return "En pause";
+    if (pu.etat === "refusee") return "Refusée";
+    return "En attente de paiement et de validation";
+}
+
+async function afficherMesPublicites() {
+    const liste = $("liste-publicites");
+    const { data, error } = await sb.rpc("mes_publicites");
+
+    liste.textContent = "";
+
+    if (error || !Array.isArray(data)) {
+        ligne(liste, "p", "⚠️ Impossible de charger vos publicités.");
+        return;
+    }
+
+    if (data.length === 0) {
+        ligne(liste, "p", "Aucune publicité pour le moment.");
+        return;
+    }
+
+    data.forEach(pu => {
+        const carte = document.createElement("div");
+        carte.className = "produit-item";
+
+        if (pu.image_path) {
+            const photo = document.createElement("img");
+            photo.src = urlPublique(pu.image_path);
+            photo.alt = pu.titre;
+            photo.className = "photo-statut";
+            carte.appendChild(photo);
+        }
+
+        ligne(carte, "h3", pu.titre);
+        if (pu.texte) ligne(carte, "p", pu.texte);
+
+        ligne(carte, "p", pu.duree_jours + (pu.duree_jours > 1 ? " jours" : " jour") + " : " +
+            Number(pu.prix).toLocaleString("fr-FR") + " " + (pu.devise === "USD" ? "$" : "FC"));
+        ligne(carte, "p", etatPublicite(pu));
+
+        if (pu.etat === "active" || pu.etat === "terminee" || pu.etat === "pause") {
+            ligne(carte, "p", "Vues : " + pu.vues + " · Clics : " + pu.clics);
+        }
+
+        if (pu.etat === "en_attente") {
+            if (pu.reference_paiement) {
+                ligne(carte, "p", "Référence de paiement : " + pu.reference_paiement);
+            }
+
+            const actions = document.createElement("div");
+            actions.className = "actions-produit";
+            actions.appendChild(bouton(
+                pu.reference_paiement ? "Modifier la référence" : "J'ai payé : saisir la référence",
+                () => declarerPaiementPub(pu)));
+            actions.appendChild(bouton("Annuler", () => annulerPub(pu)));
+            carte.appendChild(actions);
+        }
+
+        liste.appendChild(carte);
+    });
+}
+
+async function demanderPublicite() {
+    const titre = $("pub-titre").value.trim();
+    const tarif = $("pub-tarif").value;
+
+    if (!titre) {
+        alert("⚠️ Entrez un titre pour votre publicité.");
+        return;
+    }
+
+    if (!tarif) {
+        alert("⚠️ Choisissez une durée.");
+        return;
+    }
+
+    const bt = $("pub-envoyer");
+    bt.disabled = true;
+
+    let chemin = null;
+
+    try {
+        const fichier = $("pub-image").files[0];
+
+        if (fichier) {
+            const photo = await compresser(fichier, 900);
+
+            chemin = utilisateur.id + "/pub-" + crypto.randomUUID() + ".jpg";
+
+            const { error } = await sb.storage.from("produits")
+                .upload(chemin, photo, { contentType: "image/jpeg" });
+
+            if (error) { chemin = null; throw error; }
+        }
+
+        const { error: erreurDemande } = await sb.rpc("demander_publicite", {
+            p_titre: titre,
+            p_texte: $("pub-texte").value.trim() || null,
+            p_image: chemin,
+            p_tarif: tarif
+        });
+
+        if (erreurDemande) throw erreurDemande;
+    } catch (e) {
+        if (chemin) await sb.storage.from("produits").remove([chemin]);
+        bt.disabled = false;
+        echec(e);
+        return;
+    }
+
+    bt.disabled = false;
+
+    $("pub-titre").value = "";
+    $("pub-texte").value = "";
+    $("pub-image").value = "";
+
+    await afficherMesPublicites();
+
+    alert("✅ Demande envoyée. Payez selon les instructions affichées, puis saisissez votre " +
+        "référence de paiement : votre publicité sera mise en ligne après vérification.");
+}
+
+async function declarerPaiementPub(pu) {
+    const reference = prompt("Référence de la transaction (reçue par SMS) :", pu.reference_paiement || "");
+
+    if (reference === null) return;
+
+    const { error } = await sb.rpc("declarer_paiement_publicite", {
+        p_id: pu.id,
+        p_reference: reference
+    });
+
+    if (error) { echec(error); return; }
+
+    await afficherMesPublicites();
+}
+
+async function annulerPub(pu) {
+    if (!confirm("Annuler cette demande de publicité ?")) return;
+
+    const { data: chemin, error } = await sb.rpc("annuler_publicite", { p_id: pu.id });
+
+    if (error) { echec(error); return; }
+
+    if (chemin) await sb.storage.from("produits").remove([chemin]);
+
+    await afficherMesPublicites();
+}
+
+
 /* ---------- Publications (fil d'actualité) ---------- */
 
 async function ouvrirMesPublications() {
@@ -581,6 +779,9 @@ function ouvrirDepuisAdresse() {
     } else if (params.get("statut")) {
         history.replaceState(null, "", location.pathname);
         ouvrirMesStatuts();
+    } else if (params.get("pub")) {
+        history.replaceState(null, "", location.pathname);
+        ouvrirMaPublicite();
     }
 }
 

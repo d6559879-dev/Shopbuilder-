@@ -371,6 +371,14 @@ function majInterfaceRole() {
     afficherRangeeStatuts();
     afficherFil();
     majBadgeMessages();
+
+    const idActuel = utilisateur ? utilisateur.id : null;
+
+    if (idActuel !== dernierUtilisateurFil) {
+        dernierUtilisateurFil = idActuel;
+        chargerStatuts();
+        chargerFil(false);
+    }
 }
 
 
@@ -435,6 +443,15 @@ function tempsEcoule(iso) {
 
 async function chargerFil(suite) {
     if (chargementFil) return;
+
+    if (filtreFil === "suivis" && !utilisateur) {
+        publications = [];
+        filComplet = true;
+        filEnErreur = false;
+        afficherFil();
+        return;
+    }
+
     chargementFil = true;
 
     const avant = suite && publications.length
@@ -442,7 +459,8 @@ async function chargerFil(suite) {
 
     const { data, error } = await sb.rpc("fil_publications", {
         p_avant: avant,
-        p_limite: 10
+        p_limite: 10,
+        p_suivis: filtreFil === "suivis"
     });
 
     chargementFil = false;
@@ -467,7 +485,26 @@ function afficherFil() {
         ligne(liste, "p", "Aucune publication pour le moment. Les boutiques partageront bientôt leurs nouveautés.").className = "fil-vide";
     }
 
-    publications.forEach(p => liste.appendChild(creerCartePublication(p)));
+    if (filtreFil === "suivis" && !utilisateur) {
+        liste.textContent = "";
+        ligne(liste, "p", "Connectez-vous pour voir les publications des boutiques que vous suivez.").className = "fil-vide";
+    } else if (filtreFil === "suivis" && publications.length === 0 && !filEnErreur) {
+        liste.textContent = "";
+        ligne(liste, "p", "Aucune publication de vos boutiques suivies. Touchez « Suivre » sur une boutique pour la retrouver ici.").className = "fil-vide";
+    }
+
+    publications.forEach((p, n) => {
+        liste.appendChild(creerCartePublication(p));
+
+        /* Une publicité toutes les 3 publications */
+        if (pubsActives.length && (n + 1) % 3 === 0) {
+            liste.appendChild(creerCartePublicite(pubsActives[((n + 1) / 3 - 1) % pubsActives.length]));
+        }
+    });
+
+    if (pubsActives.length && publications.length > 0 && publications.length < 3) {
+        liste.appendChild(creerCartePublicite(pubsActives[0]));
+    }
 
     $("plus-fil").hidden = filComplet || publications.length === 0;
 }
@@ -519,6 +556,16 @@ function creerCartePublication(p) {
     qui.appendChild(date);
     tete.appendChild(avatar);
     tete.appendChild(qui);
+
+    if (!p.ma_boutique) {
+        const suivre = document.createElement("button");
+        suivre.type = "button";
+        suivre.className = "pub-suivre" + (p.suivi ? " actif" : "");
+        suivre.textContent = p.suivi ? "Suivi" : "Suivre";
+        suivre.addEventListener("click", () => basculerSuivi(p.slug));
+        tete.appendChild(suivre);
+    }
+
     carte.appendChild(tete);
 
     /* Texte */
@@ -642,9 +689,17 @@ function creerCartePublication(p) {
     voir.appendChild(document.createTextNode("Boutique"));
     voir.addEventListener("click", allerBoutique);
 
+    const enregistrer = document.createElement("button");
+    enregistrer.type = "button";
+    enregistrer.className = "pub-enregistrer" + (p.enregistre ? " actif" : "");
+    enregistrer.setAttribute("aria-label", p.enregistre ? "Retirer des enregistrements" : "Enregistrer");
+    enregistrer.appendChild(iconeSvg(p.enregistre ? "bookmark-plein" : "bookmark-ligne"));
+    enregistrer.addEventListener("click", () => basculerEnregistrement(p));
+
     actions.appendChild(jaime);
     actions.appendChild(commenter);
     actions.appendChild(voir);
+    actions.appendChild(enregistrer);
     carte.appendChild(actions);
 
     return carte;
@@ -682,6 +737,338 @@ async function reagirPublication(p, cle) {
         p.ma_reaction = avant.ma;
         remplacerCarte(p);
         alert("⚠️ " + error.message);
+    }
+}
+
+
+/* ---------- Filtre du fil : Pour vous / Suivis ---------- */
+
+let filtreFil = "tous";
+let dernierUtilisateurFil = null;
+
+function changerFiltreFil(filtre) {
+    filtreFil = filtre;
+
+    document.querySelectorAll(".fil-onglets button").forEach(b => {
+        const actif = b.getAttribute("data-filtre") === filtre;
+        b.classList.toggle("actif", actif);
+        b.setAttribute("aria-pressed", actif ? "true" : "false");
+    });
+
+    chargerStatuts();
+    chargerFil(false);
+}
+
+
+/* ---------- Suivre une boutique / enregistrer une publication ---------- */
+
+async function basculerSuivi(slug) {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    const { data, error } = await sb.rpc("basculer_abonnement", { p_slug: slug });
+
+    if (error) { alert("⚠️ " + error.message); return; }
+
+    publications.forEach(p => {
+        if (p.slug === slug) {
+            p.suivi = data === true;
+            remplacerCarte(p);
+        }
+    });
+}
+
+async function basculerEnregistrement(p) {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    const { data, error } = await sb.rpc("basculer_enregistrement_publication", {
+        p_publication: p.id
+    });
+
+    if (error) { alert("⚠️ " + error.message); return; }
+
+    p.enregistre = data === true;
+    remplacerCarte(p);
+}
+
+
+/* ---------- Publicités (étiquette « Sponsorisé ») ---------- */
+
+let pubsActives = [];
+const pubsVues = new Set();
+
+async function chargerPublicites() {
+    const { data, error } = await sb.rpc("publicites_actives");
+
+    pubsActives = !error && Array.isArray(data) ? data : [];
+    afficherFil();
+}
+
+function creerCartePublicite(ad) {
+    const carte = document.createElement("article");
+    carte.className = "publication sponsorisee";
+
+    const allerBoutique = async () => {
+        try {
+            await Promise.race([
+                sb.rpc("compter_publicite", { p_id: ad.id, p_type: "clic" }),
+                new Promise(resolve => setTimeout(resolve, 600))
+            ]);
+        } catch (e) {}
+
+        location.href = "vitrine.html?b=" + encodeURIComponent(ad.slug);
+    };
+
+    if (!pubsVues.has(ad.id)) {
+        pubsVues.add(ad.id);
+        sb.rpc("compter_publicite", { p_id: ad.id, p_type: "vue" }).then(() => {});
+    }
+
+    const tete = document.createElement("div");
+    tete.className = "pub-tete";
+
+    const avatar = document.createElement("button");
+    avatar.type = "button";
+    avatar.className = "pub-avatar";
+    avatar.setAttribute("aria-label", "Voir la boutique " + ad.nom);
+    avatar.addEventListener("click", allerBoutique);
+
+    if (ad.logo) {
+        const logo = document.createElement("img");
+        logo.src = urlPhoto(ad.logo);
+        logo.alt = "";
+        avatar.appendChild(logo);
+    } else {
+        avatar.appendChild(iconeSvg("store-plein"));
+    }
+
+    const qui = document.createElement("div");
+    qui.className = "pub-qui";
+
+    const nom = document.createElement("button");
+    nom.type = "button";
+    nom.textContent = ad.nom;
+    nom.addEventListener("click", allerBoutique);
+
+    const sponso = document.createElement("small");
+    sponso.textContent = "Sponsorisé";
+
+    qui.appendChild(nom);
+    qui.appendChild(sponso);
+    tete.appendChild(avatar);
+    tete.appendChild(qui);
+    carte.appendChild(tete);
+
+    const titre = document.createElement("p");
+    titre.className = "pub-texte";
+    const fort = document.createElement("strong");
+    fort.textContent = ad.titre;
+    titre.appendChild(fort);
+    carte.appendChild(titre);
+
+    if (ad.texte) {
+        const texte = document.createElement("p");
+        texte.className = "pub-texte";
+        texte.textContent = ad.texte;
+        carte.appendChild(texte);
+    }
+
+    if (ad.image_path) {
+        const grille = document.createElement("div");
+        grille.className = "pub-images g1";
+
+        const img = document.createElement("img");
+        img.src = urlPhoto(ad.image_path);
+        img.alt = ad.titre;
+        img.loading = "lazy";
+        img.addEventListener("click", allerBoutique);
+        grille.appendChild(img);
+        carte.appendChild(grille);
+    }
+
+    const zone = document.createElement("div");
+    zone.className = "pub-voir";
+
+    const voir = document.createElement("button");
+    voir.type = "button";
+    voir.className = "bouton-principal";
+    voir.textContent = "Voir la boutique";
+    voir.addEventListener("click", allerBoutique);
+
+    zone.appendChild(voir);
+    carte.appendChild(zone);
+
+    return carte;
+}
+
+
+/* ---------- Boutiques suivies (page) ---------- */
+
+async function ouvrirSuivis() {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    ouvrir("suivis");
+    await chargerSuivis();
+}
+
+async function chargerSuivis() {
+    const liste = $("liste-suivis");
+    const { data, error } = await sb.rpc("mes_abonnements");
+
+    liste.textContent = "";
+
+    if (error || !Array.isArray(data)) {
+        ligne(liste, "p", "⚠️ Impossible de charger vos boutiques suivies.").className = "fil-vide";
+        return;
+    }
+
+    if (data.length === 0) {
+        ligne(liste, "p", "Vous ne suivez aucune boutique. Ouvrez une boutique et touchez « Suivre ».").className = "fil-vide";
+        return;
+    }
+
+    data.forEach(b => {
+        const rangee = document.createElement("div");
+        rangee.className = "rangee-suivi";
+
+        const principal = document.createElement("button");
+        principal.type = "button";
+        principal.className = "conversation";
+
+        const corps = document.createElement("div");
+        corps.className = "conversation-corps";
+        corps.appendChild(nouvelElement("strong", "", b.nom));
+        corps.appendChild(nouvelElement("p", "", b.nb_produits + (b.nb_produits > 1 ? " produits" : " produit")));
+
+        principal.appendChild(avatarConversation(b.logo, b.nom));
+        principal.appendChild(corps);
+        principal.addEventListener("click", () => { location.href = "vitrine.html?b=" + encodeURIComponent(b.slug); });
+
+        const retirer = document.createElement("button");
+        retirer.type = "button";
+        retirer.className = "bouton-petit";
+        retirer.textContent = "Ne plus suivre";
+        retirer.addEventListener("click", async () => {
+            const { error: erreur } = await sb.rpc("basculer_abonnement", { p_slug: b.slug });
+            if (erreur) { alert("⚠️ " + erreur.message); return; }
+
+            publications.forEach(p => { if (p.slug === b.slug) p.suivi = false; });
+            await chargerSuivis();
+        });
+
+        rangee.appendChild(principal);
+        rangee.appendChild(retirer);
+        liste.appendChild(rangee);
+    });
+}
+
+
+/* ---------- Enregistrements (page) ---------- */
+
+async function ouvrirEnregistrements() {
+    if (!utilisateur) { ouvrirAuth(); return; }
+
+    ouvrir("enregistrements");
+    await chargerEnregistrements();
+}
+
+async function chargerEnregistrements() {
+    const corps = $("corps-enregistrements");
+    const { data, error } = await sb.rpc("mes_enregistrements");
+
+    corps.textContent = "";
+
+    if (error || !data) {
+        ligne(corps, "p", "⚠️ Impossible de charger vos enregistrements.").className = "fil-vide";
+        return;
+    }
+
+    const pubs = data.publications || [];
+    const produits = data.produits || [];
+
+    if (pubs.length === 0 && produits.length === 0) {
+        ligne(corps, "p", "Rien d'enregistré pour le moment. Touchez l'icône marque-page sur une publication ou un produit.").className = "fil-vide";
+        return;
+    }
+
+    const actions = (slug, retirer) => {
+        const zone = document.createElement("div");
+        zone.className = "actions-produit";
+
+        const voir = document.createElement("button");
+        voir.type = "button";
+        voir.textContent = "Voir la boutique";
+        voir.addEventListener("click", () => { location.href = "vitrine.html?b=" + encodeURIComponent(slug); });
+
+        const sup = document.createElement("button");
+        sup.type = "button";
+        sup.textContent = "Retirer";
+        sup.addEventListener("click", retirer);
+
+        zone.appendChild(voir);
+        zone.appendChild(sup);
+        return zone;
+    };
+
+    if (pubs.length) {
+        corps.appendChild(nouvelElement("h3", "menu-titre", "Publications"));
+
+        pubs.forEach(p => {
+            const carte = nouvelElement("div", "produit-item");
+            carte.appendChild(nouvelElement("h3", "", p.nom));
+
+            if (p.images && p.images.length) {
+                const img = document.createElement("img");
+                img.src = urlPhoto(p.images[0]);
+                img.alt = "Publication de " + p.nom;
+                img.className = "photo-statut";
+                img.loading = "lazy";
+                carte.appendChild(img);
+            }
+
+            if (p.texte) {
+                carte.appendChild(nouvelElement("p", "", p.texte.length > 140 ? p.texte.slice(0, 140) + "…" : p.texte));
+            }
+
+            carte.appendChild(actions(p.slug, async () => {
+                const { error: erreur } = await sb.rpc("basculer_enregistrement_publication", { p_publication: p.id });
+                if (erreur) { alert("⚠️ " + erreur.message); return; }
+
+                publications.forEach(x => { if (x.id === p.id) { x.enregistre = false; remplacerCarte(x); } });
+                await chargerEnregistrements();
+            }));
+
+            corps.appendChild(carte);
+        });
+    }
+
+    if (produits.length) {
+        corps.appendChild(nouvelElement("h3", "menu-titre", "Produits"));
+
+        produits.forEach(pr => {
+            const carte = nouvelElement("div", "produit-item");
+
+            if (pr.image_path) {
+                const img = document.createElement("img");
+                img.src = urlPhoto(pr.image_path);
+                img.alt = pr.nom;
+                img.className = "photo-statut";
+                img.loading = "lazy";
+                carte.appendChild(img);
+            }
+
+            carte.appendChild(nouvelElement("h3", "", pr.nom));
+            carte.appendChild(nouvelElement("p", "", pr.boutique));
+            carte.appendChild(nouvelElement("strong", "produit-prix", montant(pr.prix, pr.devise)));
+
+            carte.appendChild(actions(pr.slug, async () => {
+                const { error: erreur } = await sb.rpc("basculer_enregistrement_produit", { p_produit: pr.id });
+                if (erreur) { alert("⚠️ " + erreur.message); return; }
+
+                await chargerEnregistrements();
+            }));
+
+            corps.appendChild(carte);
+        });
     }
 }
 
@@ -898,7 +1285,7 @@ function afficherRangeeStatuts() {
 }
 
 async function chargerStatuts() {
-    const { data, error } = await sb.rpc("marche_statuts");
+    const { data, error } = await sb.rpc("marche_statuts", { p_suivis: filtreFil === "suivis" });
 
     groupesStatuts = !error && Array.isArray(data) ? data : [];
     afficherRangeeStatuts();
@@ -1281,7 +1668,23 @@ function construireMenu() {
     }
 
     liste.appendChild(ligneMenu("chat-ligne", "Messages", ouvrirMessages));
+    liste.appendChild(ligneMenu("group", "Boutiques suivies", ouvrirSuivis));
+    liste.appendChild(ligneMenu("bookmark-ligne", "Enregistrements", ouvrirEnregistrements));
+
+    if (vendeur) {
+        liste.appendChild(ligneMenu("trending", "Publicité", () => { location.href = "vendeur.html?pub=1"; }));
+    }
+
     corps.appendChild(liste);
+
+    /* Entrée réservée à l'administrateur de Dukani */
+    if (utilisateur) {
+        sb.rpc("est_admin").then(({ data }) => {
+            if (data === true && $("menu").classList.contains("active")) {
+                liste.appendChild(ligneMenu("settings", "Administration", () => { location.href = "admin.html"; }));
+            }
+        });
+    }
 
     /* Voir plus */
 
@@ -1519,6 +1922,7 @@ async function ouvrirMesCommandes() {
 chargerBoutiques();
 chargerStatuts();
 chargerFil(false);
+chargerPublicites();
 
 sb.auth.getSession().then(({ data }) => {
     if (!data.session && (params.get("connexion") || params.get("messages"))) ouvrirAuth();
