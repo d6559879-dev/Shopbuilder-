@@ -1144,58 +1144,224 @@ async function ouvrirSession(user) {
     }
 }
 
-function ouvrirCompte() {
-    ouvrirParametres();
+/* ---------- Compte : informations du profil seulement ---------- */
+
+function initialeProfil() {
+    return ((nomProfil || (utilisateur && utilisateur.email) || "?").trim().charAt(0) || "?").toUpperCase();
 }
 
-/* Section « Compte » de la fenêtre Paramètres */
+function libelleRole() {
+    return role === "vendeur" ? "Compte vendeur" : "Compte acheteur";
+}
 
-window.remplirParametresCompte = function (zone) {
-    const titre = document.createElement("label");
-    titre.textContent = "Compte";
-    zone.appendChild(titre);
+function ouvrirCompte() {
+    if (!utilisateur) { ouvrirAuth(); return; }
 
-    const action = (texte, nomIcone, classe, fonction) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = classe + " avec-icone";
-        b.appendChild(iconeSvg(nomIcone));
-        b.appendChild(document.createTextNode(texte));
-        b.addEventListener("click", () => { window.fermerParametres(); fonction(); });
-        zone.appendChild(b);
-    };
+    $("c-initiale").textContent = initialeProfil();
+    $("c-nom").textContent = nomProfil || "Mon profil";
+    $("c-role").textContent = libelleRole();
+    $("c-email").textContent = utilisateur.email || "-";
+    $("c-depuis").textContent = utilisateur.created_at
+        ? new Date(utilisateur.created_at).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+        : "-";
 
-    if (!utilisateur) {
-        ligne(zone, "p", "Vous n'êtes pas connecté.").className = "sous-titre";
-        action("Se connecter ou créer un compte", "person-ligne", "bouton-secondaire", ouvrirAuth);
-        return;
+    ouvrir("compte");
+}
+
+
+/* ---------- Menu (☰) façon Facebook ---------- */
+
+function nouvelElement(tag, classe, texte) {
+    const e = document.createElement(tag);
+    if (classe) e.className = classe;
+    if (texte) e.textContent = texte;
+    return e;
+}
+
+function actionMenu(fonction) {
+    return () => { fermer("menu"); fonction(); };
+}
+
+function ligneMenu(nomIcone, texte, fonction) {
+    const b = nouvelElement("button", "menu-ligne");
+    b.type = "button";
+    b.appendChild(iconeSvg(nomIcone));
+    b.appendChild(nouvelElement("span", "", texte));
+    b.addEventListener("click", actionMenu(fonction));
+    return b;
+}
+
+function raccourciMenu(nomIcone, texte, fonction) {
+    const b = nouvelElement("button", "raccourci");
+    b.type = "button";
+    b.appendChild(iconeSvg(nomIcone));
+    b.appendChild(nouvelElement("span", "", texte));
+    b.addEventListener("click", actionMenu(fonction));
+    return b;
+}
+
+function sectionMenu(nomIcone, titre, remplir) {
+    const section = nouvelElement("details", "menu-section");
+    const resume = nouvelElement("summary");
+
+    resume.appendChild(iconeSvg(nomIcone));
+    resume.appendChild(nouvelElement("span", "", titre));
+
+    const fleche = iconeSvg("chevron");
+    fleche.setAttribute("class", "ic chevron");
+    resume.appendChild(fleche);
+
+    const contenu = nouvelElement("div", "menu-section-contenu");
+    remplir(contenu);
+
+    section.appendChild(resume);
+    section.appendChild(contenu);
+    return section;
+}
+
+function construireMenu() {
+    const corps = $("menu-corps");
+    corps.textContent = "";
+
+    const vendeur = role === "vendeur";
+
+    /* Profil */
+
+    const profil = nouvelElement("button", "menu-profil");
+    profil.type = "button";
+
+    const avatar = nouvelElement("div", "profil-avatar");
+    const infos = nouvelElement("div", "menu-profil-infos");
+
+    if (utilisateur) {
+        avatar.textContent = initialeProfil();
+        infos.appendChild(nouvelElement("strong", "", nomProfil || utilisateur.email || "Mon profil"));
+        infos.appendChild(nouvelElement("small", "", libelleRole()));
+        profil.addEventListener("click", actionMenu(ouvrirCompte));
+    } else {
+        avatar.appendChild(iconeSvg("person-plein"));
+        infos.appendChild(nouvelElement("strong", "", "Se connecter"));
+        infos.appendChild(nouvelElement("small", "", "Connectez-vous ou créez un compte"));
+        profil.addEventListener("click", actionMenu(ouvrirAuth));
     }
 
-    const infos = document.createElement("div");
-    infos.className = "info-boutique";
+    profil.appendChild(avatar);
+    profil.appendChild(infos);
+    corps.appendChild(profil);
 
-    [["Nom", nomProfil || "-"], ["Email", utilisateur.email || "-"]].forEach(([nom, valeur]) => {
-        const bloc = document.createElement("div");
-        const etiquette = document.createElement("span");
-        const contenu = document.createElement("strong");
-        etiquette.textContent = nom;
-        contenu.textContent = valeur;
-        contenu.style.wordBreak = "break-all";
-        bloc.appendChild(etiquette);
-        bloc.appendChild(contenu);
-        infos.appendChild(bloc);
+    /* Raccourcis */
+
+    corps.appendChild(nouvelElement("h3", "menu-titre", "Vos raccourcis"));
+
+    const raccourcis = nouvelElement("div", "menu-raccourcis");
+
+    if (vendeur) {
+        raccourcis.appendChild(raccourciMenu("store-plein", "Ma boutique", () => { location.href = "vendeur.html"; }));
+        raccourcis.appendChild(raccourciMenu("note", "Publier", () => { location.href = "vendeur.html?publier=1"; }));
+        raccourcis.appendChild(raccourciMenu("megaphone", "Arrivages", () => { location.href = "vendeur.html?statut=1"; }));
+        raccourcis.appendChild(raccourciMenu("chat-ligne", "Messages", ouvrirMessages));
+    } else {
+        raccourcis.appendChild(raccourciMenu("store-ligne", "Boutiques", () => afficherOnglet("boutiques")));
+        raccourcis.appendChild(raccourciMenu("cart-ligne", "Commandes", ouvrirCommandesOnglet));
+        raccourcis.appendChild(raccourciMenu("chat-ligne", "Messages", ouvrirMessages));
+    }
+
+    corps.appendChild(raccourcis);
+
+    /* Fonctions */
+
+    const liste = nouvelElement("div", "menu-liste");
+
+    if (vendeur) {
+        liste.appendChild(ligneMenu("stats", "Tableau de bord vendeur", () => { location.href = "vendeur.html"; }));
+        liste.appendChild(ligneMenu("store-ligne", "Place de marché", () => afficherOnglet("boutiques")));
+    } else {
+        liste.appendChild(ligneMenu("store-ligne", "Toutes les boutiques", () => afficherOnglet("boutiques")));
+        liste.appendChild(ligneMenu("cart-ligne", "Mes commandes", ouvrirCommandesOnglet));
+    }
+
+    liste.appendChild(ligneMenu("chat-ligne", "Messages", ouvrirMessages));
+    corps.appendChild(liste);
+
+    /* Voir plus */
+
+    const plus = nouvelElement("div", "menu-liste");
+    plus.hidden = true;
+    plus.appendChild(ligneMenu("home-ligne", "Fil d'actualité", () => afficherOnglet("accueil")));
+    plus.appendChild(ligneMenu("megaphone", "Nouveaux arrivages", () => afficherOnglet("accueil")));
+    plus.appendChild(ligneMenu("search", "Rechercher", ouvrirRecherche));
+
+    const voirPlus = nouvelElement("button", "menu-voir-plus", "Voir plus");
+    voirPlus.type = "button";
+    voirPlus.addEventListener("click", () => {
+        plus.hidden = !plus.hidden;
+        voirPlus.textContent = plus.hidden ? "Voir plus" : "Voir moins";
     });
 
-    zone.appendChild(infos);
+    corps.appendChild(plus);
+    corps.appendChild(voirPlus);
 
-    if (role === "vendeur") {
-        action("Mon espace vendeur", "store-plein", "bouton-secondaire", () => { location.href = "vendeur.html"; });
-    } else {
-        action("Mes commandes", "cart-ligne", "bouton-secondaire", ouvrirMesCommandes);
+    /* Aide et assistance */
+
+    corps.appendChild(sectionMenu("help", "Aide et assistance", zone => {
+        [
+            ["Comment passer une commande ?",
+                "Ouvrez une boutique, choisissez un produit, touchez Commander puis indiquez votre nom et votre téléphone. Il faut un compte acheteur."],
+            ["Comment payer ?",
+                "À la livraison, ou par mobile money si la boutique l'accepte : vous envoyez le montant au numéro indiqué puis vous saisissez la référence de la transaction. Le vendeur confirme ensuite votre paiement."],
+            ["Comment écrire à une boutique ?",
+                "Sur la vitrine de la boutique, touchez « Discuter avec la boutique ». Vos discussions se retrouvent dans l'onglet Messages."],
+            ["Comment vendre sur Dukani ?",
+                "Créez un compte vendeur depuis la page Espace vendeur, puis ouvrez votre boutique et ajoutez vos produits. Un compte vendeur ne peut pas passer de commandes."]
+        ].forEach(([question, reponse]) => {
+            const d = nouvelElement("details", "faq");
+            d.appendChild(nouvelElement("summary", "", question));
+            d.appendChild(nouvelElement("p", "", reponse));
+            zone.appendChild(d);
+        });
+    }));
+
+    /* Paramètres et confidentialité */
+
+    corps.appendChild(sectionMenu("settings", "Paramètres et confidentialité", zone => {
+        zone.appendChild(nouvelElement("label", "", "Apparence"));
+        zone.appendChild(window.creerChoixTheme());
+        zone.appendChild(nouvelElement("p", "sous-titre",
+            "Automatique suit le réglage de votre téléphone. Clair et Sombre le remplacent."));
+
+        zone.appendChild(nouvelElement("label", "", "Confidentialité"));
+        [
+            "Votre email n'est jamais affiché aux autres utilisateurs.",
+            "Votre nom apparaît dans vos commentaires et vos messages.",
+            "Quand vous commandez, la boutique reçoit le nom et le téléphone que vous saisissez.",
+            "Le numéro mobile money d'une boutique n'est visible que par les acheteurs qui ont commandé chez elle."
+        ].forEach(texte => zone.appendChild(nouvelElement("p", "ligne-confidentialite", texte)));
+
+        window.marquerTheme();
+    }));
+
+    /* À propos */
+
+    corps.appendChild(sectionMenu("info", "À propos de Dukani", zone => {
+        zone.appendChild(nouvelElement("p", "ligne-confidentialite",
+            "Dukani est une place de marché en ligne pour la RDC : des boutiques, des produits, des commandes et des discussions au même endroit."));
+    }));
+
+    /* Déconnexion */
+
+    if (utilisateur) {
+        const sortir = nouvelElement("button", "menu-deconnexion", "Déconnexion");
+        sortir.type = "button";
+        sortir.addEventListener("click", actionMenu(deconnexion));
+        corps.appendChild(sortir);
     }
+}
 
-    action("Se déconnecter", "logout", "bouton-danger", deconnexion);
-};
+function ouvrirMenu() {
+    construireMenu();
+    ouvrir("menu");
+    $("menu-corps").scrollTop = 0;
+}
 
 async function deconnexion() {
     await sb.auth.signOut();
@@ -1206,8 +1372,7 @@ async function deconnexion() {
     majInterfaceRole();
 
     quitterDiscussion();
-    ["mes-commandes", "messagerie"].forEach(fermer);
-    window.fermerParametres();
+    ["mes-commandes", "messagerie", "menu", "compte"].forEach(fermer);
     $("liste-mes-commandes").innerHTML = "";
 }
 

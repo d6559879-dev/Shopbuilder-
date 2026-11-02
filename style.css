@@ -2675,3 +2675,231 @@ a.carte-boutique:active {
 #parametres-compte button {
     margin-top: 10px;
 }
+
+
+/* =====================================
+   MENU (☰) FAÇON FACEBOOK ET COMPTE
+===================================== */
+
+.menu-corps {
+    flex: 1;
+    padding: 12px 14px calc(env(safe-area-inset-bottom, 0px) + 28px);
+    overflow-y: auto;
+}
+
+.menu-profil {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    font-family: inherit;
+    text-align: left;
+    color: var(--encre);
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 18px;
+    box-shadow: var(--reflet);
+    cursor: pointer;
+}
+
+.menu-profil-infos {
+    flex: 1;
+    min-width: 0;
+}
+
+.menu-profil-infos strong {
+    display: block;
+    overflow: hidden;
+    font-size: 17px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.menu-profil-infos small {
+    color: var(--encre-douce);
+}
+
+.profil-avatar {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--violet-clair), var(--violet));
+    border-radius: 50%;
+}
+
+.profil-avatar .ic {
+    width: 28px;
+    height: 28px;
+}
+
+.profil-avatar.grand {
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 10px;
+    font-size: 36px;
+}
+
+.profil-entete {
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+.profil-entete h2 {
+    margin: 0;
+}
+
+.menu-titre {
+    margin: 20px 2px 8px;
+    font-size: 17px;
+}
+
+.menu-raccourcis {
+    display: flex;
+    gap: 10px;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.menu-raccourcis::-webkit-scrollbar {
+    display: none;
+}
+
+.raccourci {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 96px;
+    padding: 14px 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--encre);
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 16px;
+    cursor: pointer;
+}
+
+.raccourci .ic {
+    width: 28px;
+    height: 28px;
+    color: var(--violet-texte);
+}
+
+.menu-liste {
+    margin-top: 6px;
+}
+
+.menu-ligne {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--encre);
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 16px;
+    cursor: pointer;
+}
+
+.menu-ligne .ic {
+    width: 26px;
+    height: 26px;
+    color: var(--violet-texte);
+}
+
+.menu-voir-plus,
+.menu-deconnexion {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--encre);
+    background: var(--g85);
+    border: 1px solid var(--verre-bord);
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.menu-deconnexion {
+    margin-top: 22px;
+}
+
+.menu-section {
+    margin-top: 16px;
+    border-top: 1px solid var(--verre-bord);
+}
+
+.menu-section > summary {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 4px;
+    font-size: 18px;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+}
+
+.menu-section > summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu-section > summary .ic {
+    width: 26px;
+    height: 26px;
+}
+
+.menu-section > summary .chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.menu-section[open] > summary .chevron {
+    transform: rotate(180deg);
+}
+
+.menu-section-contenu {
+    padding: 0 4px 10px;
+}
+
+.faq {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--verre-bord);
+}
+
+.faq summary {
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.faq p,
+.ligne-confidentialite {
+    margin: 8px 0 0;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--encre-douce);
+}
+
+.choix-icone .ic {
+    width: 26px;
+    height: 26px;
+}

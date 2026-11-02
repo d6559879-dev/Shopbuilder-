@@ -1,13 +1,15 @@
-/* Paramètres d'apparence : automatique (réglage de l'appareil) / clair / sombre.
-   Le choix de l'utilisateur remplace toujours celui de son téléphone. */
+/* Apparence : automatique (réglage de l'appareil) / clair / sombre.
+   Le choix de l'utilisateur remplace toujours celui de son téléphone.
+   Ce fichier fournit aussi la fenêtre « Paramètres » des vitrines et de l'espace vendeur. */
 
 (function () {
     var CLE = "dukani_theme";
     var CHOIX = [
-        { mode: "auto", icone: "🌓", nom: "Automatique" },
-        { mode: "clair", icone: "☀️", nom: "Clair" },
-        { mode: "sombre", icone: "🌙", nom: "Sombre" }
+        { mode: "auto", icone: "contrast", nom: "Automatique" },
+        { mode: "clair", icone: "sun", nom: "Clair" },
+        { mode: "sombre", icone: "moon", nom: "Sombre" }
     ];
+    var NS = "http://www.w3.org/2000/svg";
 
     function lire() {
         try {
@@ -18,7 +20,7 @@
     }
 
     function marquer(mode) {
-        var boutons = document.querySelectorAll("#parametres .choix-theme button");
+        var boutons = document.querySelectorAll(".choix-theme button");
         for (var i = 0; i < boutons.length; i++) {
             var actif = boutons[i].getAttribute("data-mode") === mode;
             boutons[i].classList.toggle("actif", actif);
@@ -38,6 +40,44 @@
         try { localStorage.setItem(CLE, mode); } catch (e) {}
         appliquer(mode);
     };
+
+    function iconeSvg(nom) {
+        var svg = document.createElementNS(NS, "svg");
+        var use = document.createElementNS(NS, "use");
+        svg.setAttribute("class", "ic");
+        svg.setAttribute("aria-hidden", "true");
+        use.setAttribute("href", "#ic-" + nom);
+        svg.appendChild(use);
+        return svg;
+    }
+
+    /* Les trois boutons Automatique / Clair / Sombre (réutilisés par le menu de l'accueil) */
+    window.creerChoixTheme = function () {
+        var groupe = document.createElement("div");
+        groupe.className = "choix-theme";
+
+        CHOIX.forEach(function (c) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.setAttribute("data-mode", c.mode);
+
+            var ic = document.createElement("span");
+            ic.className = "choix-icone";
+            ic.appendChild(iconeSvg(c.icone));
+
+            var tx = document.createElement("span");
+            tx.textContent = c.nom;
+
+            b.appendChild(ic);
+            b.appendChild(tx);
+            b.addEventListener("click", function () { window.choisirTheme(c.mode); });
+            groupe.appendChild(b);
+        });
+
+        return groupe;
+    };
+
+    window.marquerTheme = function () { marquer(lire()); };
 
     function creerFenetre() {
         if (document.getElementById("parametres")) return;
@@ -68,27 +108,6 @@
         var sousTitre = document.createElement("label");
         sousTitre.textContent = "Apparence";
 
-        var groupe = document.createElement("div");
-        groupe.className = "choix-theme";
-
-        CHOIX.forEach(function (c) {
-            var b = document.createElement("button");
-            b.type = "button";
-            b.setAttribute("data-mode", c.mode);
-
-            var ic = document.createElement("span");
-            ic.className = "choix-icone";
-            ic.textContent = c.icone;
-
-            var tx = document.createElement("span");
-            tx.textContent = c.nom;
-
-            b.appendChild(ic);
-            b.appendChild(tx);
-            b.addEventListener("click", function () { window.choisirTheme(c.mode); });
-            groupe.appendChild(b);
-        });
-
         var aide = document.createElement("p");
         aide.className = "sous-titre";
         aide.textContent = "Automatique suit le réglage de votre téléphone. " +
@@ -98,7 +117,7 @@
         boite.appendChild(titre);
         boite.appendChild(compte);
         boite.appendChild(sousTitre);
-        boite.appendChild(groupe);
+        boite.appendChild(window.creerChoixTheme());
         boite.appendChild(aide);
         fenetre.appendChild(boite);
         document.body.appendChild(fenetre);
