@@ -146,6 +146,111 @@
         if (e.key === "Escape") window.fermerParametres();
     });
 
+    /* ---------- Toasts de notification (remplace les alert() bloquants) ---------- */
+
+    var conteneurToast = null;
+
+    function creerConteneurToast() {
+        if (conteneurToast && conteneurToast.isConnected) return conteneurToast;
+        conteneurToast = document.createElement("div");
+        conteneurToast.id = "dukani-toasts";
+        conteneurToast.className = "dukani-toasts";
+        conteneurToast.setAttribute("role", "status");
+        conteneurToast.setAttribute("aria-live", "polite");
+        document.body.appendChild(conteneurToast);
+        return conteneurToast;
+    }
+
+    window.afficherToast = function (message, type, duree) {
+        if (!message) return;
+        var texte = String(message).trim();
+        var icone = "ℹ️";
+
+        if (/^✅/.test(texte)) {
+            icone = "✅";
+            texte = texte.replace(/^✅\s*/, "");
+            if (!type) type = "succes";
+        } else if (/^⚠️/.test(texte)) {
+            icone = "⚠️";
+            texte = texte.replace(/^⚠️\s*/, "");
+            if (!type) type = "attention";
+        } else if (/^❌/.test(texte)) {
+            icone = "❌";
+            texte = texte.replace(/^❌\s*/, "");
+            if (!type) type = "erreur";
+        } else if (/^📋/.test(texte)) {
+            icone = "📋";
+            texte = texte.replace(/^📋\s*/, "");
+            if (!type) type = "copie";
+        } else if (/^🗑️/.test(texte)) {
+            icone = "🗑️";
+            texte = texte.replace(/^🗑️\s*/, "");
+            if (!type) type = "danger";
+        }
+
+        var conteneur = creerConteneurToast();
+
+        var toast = document.createElement("div");
+        toast.className = "dukani-toast" + (type ? " toast-" + type : "");
+        toast.setAttribute("role", "alert");
+
+        var ic = document.createElement("span");
+        ic.className = "toast-icone";
+        ic.textContent = icone;
+
+        var corps = document.createElement("div");
+        corps.className = "toast-texte";
+        corps.textContent = texte;
+
+        var barre = document.createElement("div");
+        barre.className = "toast-barre";
+
+        var tempsMs = typeof duree === "number" ? duree : 3500;
+        barre.style.animationDuration = tempsMs + "ms";
+
+        toast.appendChild(ic);
+        toast.appendChild(corps);
+        toast.appendChild(barre);
+
+        var ferme = false;
+        function fermerToast() {
+            if (ferme) return;
+            ferme = true;
+            toast.classList.add("toast-sortie");
+            setTimeout(function () {
+                if (toast.parentNode) toast.parentNode.removeChild(toast);
+            }, 250);
+        }
+
+        toast.addEventListener("click", fermerToast);
+        var timer = setTimeout(fermerToast, tempsMs);
+
+        toast.addEventListener("mouseenter", function () {
+            clearTimeout(timer);
+            barre.style.animationPlayState = "paused";
+        });
+        toast.addEventListener("mouseleave", function () {
+            timer = setTimeout(fermerToast, 1500);
+            barre.style.animationPlayState = "running";
+        });
+
+        conteneur.appendChild(toast);
+
+        while (conteneur.children.length > 3) {
+            conteneur.removeChild(conteneur.firstChild);
+        }
+    };
+
+    /* Remplacement moderne et non-bloquant de alert() */
+    var alertOriginal = window.alert;
+    window.alert = function (msg) {
+        if (document.body) {
+            window.afficherToast(msg);
+        } else {
+            alertOriginal(msg);
+        }
+    };
+
     appliquer(lire());
     document.addEventListener("DOMContentLoaded", function () {
         creerFenetre();

@@ -16,6 +16,30 @@
       "created_at": "2026-11-05T17:40:11.339Z",
       "sender": "ios",
       "is_cancelled": false
+    },
+    {
+      "id": "db5a07e3-6b41-459b-b7ff-ad9a2ea6503a",
+      "role": "agent",
+      "content": "Oui, avec grand plaisir ! Votre projet **Dukani** est une excellente plateforme e-commerce sociale (style marketplace avec fil d'actualités, stories 24h, messagerie instantanée, espaces vitrines dédiés et paiements Mobile Money).\n\n---\n\n### 🛠️ Deux corrections immédiates déjà appliquées\n\n1. **Suppression du doublon `Theme.js`** : Un ancien fichier en majuscule était encore suivi dans Git en parallèle de [`theme.js`](https://github.com/d6559879-dev/Shopbuilder-/blob/Root/theme.js), ce qui pouvait provoquer des conflits sur Windows ou macOS.\n2. **Harmonisation de la sécurité CSP** : Ajout du support de `blob:` dans la directive `img-src` de [`index.html`](https://github.com/d6559879-dev/Shopbuilder-/blob/Root/index.html) et [`vitrine.html`](https://github.com/d6559879-dev/Shopbuilder-/blob/Root/vitrine.html) pour éviter tout blocage d'affichage d'images générées côté client.\n\n*(Ces modifications sont automatiquement enregistrées dans votre dépôt GitHub).*\n\n---\n\n### 🚀 Propositions d'améliorations clés pour Dukani\n\nVoici les axes principaux sur lesquels nous pouvons travailler selon vos priorités :\n\n#### 1. Expérience Utilisateur & Design (UX/UI)\n* **Squelettes de chargement (Skeleton loaders)** : Remplacer les zones vides par des animations de chargement fluides (cartes de produits, fil d'actualité, statuts) pendant la récupération des données Supabase.\n* **Notifications Toast & Retours visuels** : Ajouter des micro-animations et alertes discrètes lors d'une action réussie (produit enregistré, commande passée, lien copié, message envoyé).\n* **Recherche & Filtres enrichis** : Tri par prix croissant/décroissant, filtre \"en stock uniquement\", et auto-complétion instantanée.\n\n#### 2. E-commerce & Vendeurs\n* **Panier multi-produits** : Actuellement, la commande se fait article par article. Permettre d'ajouter plusieurs articles d'une même boutique au panier avant de valider la commande.\n* **Partage direct sur WhatsApp** : Ajouter un bouton de partage rapide pour un produit ou une publication avec un message pré-rempli et le lien de la vitrine.\n* **Alertes commandes en temps réel** : Signal sonore ou visuel dans l'espace vendeur dès qu'une nouvelle commande arrive.\n* **Reçu de commande** : Génération d'un récapitulatif / reçu clair (téléchargeable ou imprimable) pour les acheteurs.\n\n#### 3. Mobile (PWA) & Référencement (SEO)\n* **Installation PWA (Progressive Web App)** : Ajouter un `manifest.webmanifest` et des icônes d'application pour que vos utilisateurs puissent installer **Dukani** directement sur leur écran d'accueil Android / iPhone comme une vraie application.\n* **Aperçus de partage (Open Graph)** : Configurer les balises meta pour afficher une belle carte avec image, titre et description lors du partage d'un lien sur WhatsApp, Facebook ou Twitter.\n\n---\n\nSur quel aspect souhaitez-vous que l'on commence ? Vous avez une priorité particulière ou un bug précis que vous aimeriez corriger ?",
+      "status": "completed",
+      "model": "auto",
+      "client_type": "gemini-bridge",
+      "parent_message_id": "b0bf6272-36e8-42e4-a211-a571f71bffbc",
+      "created_at": "2026-11-05T17:44:45.610Z",
+      "sender": "macOS",
+      "is_cancelled": false
+    },
+    {
+      "id": "829f90a9-5f91-4628-a14e-871f8f82bacd",
+      "role": "user",
+      "content": "On commence par l’EXPERIENCE UTILISATEUR & DESIGN (UX/UI)",
+      "status": "pending",
+      "model": "auto",
+      "client_type": "gemini-bridge",
+      "parent_message_id": null,
+      "created_at": "2026-11-05T17:53:20.162Z",
+      "sender": "ios",
+      "is_cancelled": false
     }
   ]
 }

@@ -36,8 +36,27 @@ function introuvable() {
     $("v-produits").innerHTML = "";
 }
 
+function afficherSquelettesVitrine() {
+    const zone = $("v-produits");
+    if (!zone) return;
+    zone.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton-produit";
+        sk.innerHTML =
+            '<div class="skeleton-base skeleton-produit-photo"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:70%;height:16px"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:40%"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:50%;height:18px"></div>' +
+            '<div class="skeleton-base skeleton-action-pill" style="margin-top:6px"></div>';
+        zone.appendChild(sk);
+    }
+}
+
 async function charger() {
     if (!slug || !/^[a-z0-9-]{3,60}$/.test(slug)) { introuvable(); return; }
+
+    afficherSquelettesVitrine();
 
     const { data, error } = await sb.rpc("vitrine", { p_slug: slug });
 

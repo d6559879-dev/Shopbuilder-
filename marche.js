@@ -441,6 +441,31 @@ function tempsEcoule(iso) {
     return "il y a " + Math.floor(minutes / 1440) + " j";
 }
 
+function afficherSquelettesFil() {
+    const liste = $("liste-fil");
+    if (!liste) return;
+    liste.textContent = "";
+    for (let i = 0; i < 3; i++) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton-pub";
+        sk.innerHTML =
+            '<div class="skeleton-pub-tete">' +
+                '<div class="skeleton-base skeleton-cercle skeleton-pub-avatar"></div>' +
+                '<div class="skeleton-pub-lignes">' +
+                    '<div class="skeleton-base skeleton-ligne" style="width:45%"></div>' +
+                    '<div class="skeleton-base skeleton-ligne" style="width:25%"></div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:80%"></div>' +
+            '<div class="skeleton-base skeleton-pub-image"></div>' +
+            '<div class="skeleton-pub-actions">' +
+                '<div class="skeleton-base skeleton-action-pill"></div>' +
+                '<div class="skeleton-base skeleton-action-pill"></div>' +
+            '</div>';
+        liste.appendChild(sk);
+    }
+}
+
 async function chargerFil(suite) {
     if (chargementFil) return;
 
@@ -450,6 +475,10 @@ async function chargerFil(suite) {
         filEnErreur = false;
         afficherFil();
         return;
+    }
+
+    if (!suite && publications.length === 0) {
+        afficherSquelettesFil();
     }
 
     chargementFil = true;
@@ -1292,9 +1321,32 @@ async function chargerStatuts() {
 }
 
 
-async function chargerBoutiques() {
-    const terme = $("recherche").value.trim().slice(0, 60);
+function afficherSquelettesBoutiques() {
     const zone = $("liste-boutiques");
+    if (!zone) return;
+    zone.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+        const sk = document.createElement("div");
+        sk.className = "skeleton-boutique";
+        sk.innerHTML =
+            '<div class="skeleton-base skeleton-boutique-photo"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:60%;height:16px"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:85%"></div>' +
+            '<div class="skeleton-base skeleton-ligne" style="width:40%"></div>';
+        zone.appendChild(sk);
+    }
+}
+
+async function chargerBoutiques() {
+    const champ = $("recherche");
+    const vider = $("recherche-vider");
+    const compteur = $("recherche-compteur");
+    const terme = champ ? champ.value.trim().slice(0, 60) : "";
+    const zone = $("liste-boutiques");
+
+    if (vider) vider.hidden = !terme;
+
+    afficherSquelettesBoutiques();
 
     const { data, error } = await sb.rpc("marche_boutiques", {
         p_recherche: terme || null,
@@ -1304,14 +1356,27 @@ async function chargerBoutiques() {
     zone.innerHTML = "";
 
     if (error) {
-        ligne(zone, "p", "⚠️ Impossible de charger les boutiques. Réessayez.");
+        if (compteur) compteur.hidden = true;
+        const err = ligne(zone, "p", "⚠️ Impossible de charger les boutiques. Réessayez.");
+        err.className = "fil-vide erreur";
         return;
     }
 
     if (!data || data.length === 0) {
+        if (compteur) compteur.hidden = true;
         const filtre = terme || categorieActive;
-        ligne(zone, "p", filtre ? "Aucune boutique trouvée pour cette recherche." : "Aucune boutique pour le moment.");
+        const p = ligne(zone, "p", filtre ? "Aucune boutique trouvée pour cette recherche." : "Aucune boutique pour le moment.");
+        p.className = "fil-vide";
         return;
+    }
+
+    if (compteur) {
+        if (terme || categorieActive) {
+            compteur.textContent = data.length + (data.length > 1 ? " boutiques trouvées" : " boutique trouvée");
+            compteur.hidden = false;
+        } else {
+            compteur.hidden = true;
+        }
     }
 
     data.forEach(b => {
@@ -1361,9 +1426,43 @@ $("filtres").addEventListener("click", function (e) {
 });
 
 $("recherche").addEventListener("input", function () {
+    const vider = $("recherche-vider");
+    if (vider) vider.hidden = !this.value.trim();
     clearTimeout(minuteurRecherche);
     minuteurRecherche = setTimeout(chargerBoutiques, 300);
 });
+
+const btnViderRecherche = $("recherche-vider");
+if (btnViderRecherche) {
+    btnViderRecherche.addEventListener("click", function () {
+        const ch = $("recherche");
+        if (ch) {
+            ch.value = "";
+            ch.focus();
+        }
+        btnViderRecherche.hidden = true;
+        chargerBoutiques();
+    });
+}
+
+/* Bouton retour en haut */
+
+window.addEventListener("scroll", function () {
+    const bt = $("bouton-haut");
+    if (!bt) return;
+    if (window.scrollY > 380) {
+        bt.classList.add("visible");
+    } else {
+        bt.classList.remove("visible");
+    }
+}, { passive: true });
+
+const btHaut = $("bouton-haut");
+if (btHaut) {
+    btHaut.addEventListener("click", function () {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+}
 
 
 /* ---------- Connexion acheteur ---------- */

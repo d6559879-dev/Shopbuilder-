@@ -121,6 +121,8 @@
 
 html {
     scroll-padding-top: 90px;
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -131,6 +133,7 @@ body {
     background: var(--fond);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* Lueurs de fond, vues à travers le verre */
@@ -941,10 +944,17 @@ a.bouton-principal {
    PLACE DE MARCHÉ
 ===================================== */
 
+.barre-recherche-enveloppe {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
 .recherche {
     display: block;
     width: 100%;
-    padding: 14px 16px;
+    padding: 14px 40px 14px 44px;
 
     font-family: inherit;
     font-size: 15px;
@@ -955,11 +965,49 @@ a.bouton-principal {
     border-radius: 999px;
     box-shadow: inset 0 2px 5px rgba(31, 78, 125, 0.1);
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .recherche:focus {
     border-color: var(--violet-clair);
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+}
+
+.ic-recherche-champ {
+    position: absolute;
+    left: 14px;
+    width: 20px;
+    height: 20px;
+    color: var(--placeholder);
+    pointer-events: none;
+}
+
+.recherche-vider {
+    position: absolute;
+    right: 12px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    font-size: 13px;
+    color: var(--encre-douce);
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+.recherche-vider:active {
+    transform: scale(0.9);
+}
+
+.recherche-compteur {
+    margin: 8px 6px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--encre-douce);
 }
 
 .grille-boutiques {
@@ -973,7 +1021,14 @@ a.carte-boutique {
     margin-top: 0;
     color: inherit;
     text-decoration: none;
-    transition: transform 0.15s ease;
+    transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease;
+}
+
+@media (hover: hover) {
+    a.carte-boutique:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 26px rgba(31, 78, 125, 0.2);
+    }
 }
 
 a.carte-boutique:active {
@@ -1987,10 +2042,44 @@ a.carte-boutique:active {
 }
 
 .fil-vide {
-    margin: 24px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    color: var(--encre-douce);
+    padding: 32px 20px;
+    margin: 20px auto;
+    max-width: 440px;
+    background: var(--verre);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon);
+    box-shadow: var(--reflet);
+    -webkit-backdrop-filter: var(--flou);
+    backdrop-filter: var(--flou);
+    color: var(--encre);
+    line-height: 1.5;
+    animation: fondu 0.25s ease;
 }
+
+.fil-vide::before {
+    content: "🛍️";
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 12px;
+    font-size: 26px;
+    background: var(--g70);
+    border: 1px solid var(--verre-bord);
+    border-radius: 50%;
+    box-shadow: 0 4px 14px var(--lueur-2);
+}
+
+.fil-vide.aucun-message::before { content: "💬"; }
+.fil-vide.erreur::before { content: "⚠️"; }
+.fil-vide.aucune-commande::before { content: "📦"; }
+.fil-vide.aucun-favori::before { content: "🔖"; }
+.fil-vide.bonjour::before { content: "👋"; }
 
 #plus-fil {
     margin-top: 14px;
@@ -3063,4 +3152,289 @@ a.carte-boutique:active {
 
 .fil-onglets.enveloppe {
     flex-wrap: wrap;
+}
+
+/* =====================================
+   TOASTS DE NOTIFICATION MODERNES
+===================================== */
+
+.dukani-toasts {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 92%;
+    max-width: 420px;
+    pointer-events: none;
+}
+
+.dukani-toast {
+    position: relative;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    overflow: hidden;
+
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--encre);
+
+    background: var(--barre);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon-petit);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), var(--reflet);
+    -webkit-backdrop-filter: var(--flou);
+    backdrop-filter: var(--flou);
+
+    cursor: pointer;
+    user-select: none;
+    animation: toast-entree 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+}
+
+.dukani-toast:active {
+    transform: scale(0.98);
+}
+
+.dukani-toast.toast-sortie {
+    animation: toast-sortie 0.25s ease forwards;
+}
+
+.toast-icone {
+    flex: 0 0 auto;
+    font-size: 20px;
+    line-height: 1;
+}
+
+.toast-texte {
+    flex: 1 1 auto;
+    word-break: break-word;
+}
+
+.toast-barre {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--violet-clair), var(--violet));
+    transform-origin: left center;
+    animation: toast-jauge linear forwards;
+}
+
+.toast-succes .toast-barre {
+    background: linear-gradient(90deg, #86efac, var(--succes));
+}
+
+.toast-attention .toast-barre {
+    background: linear-gradient(90deg, #fcd34d, #f59e0b);
+}
+
+.toast-erreur .toast-barre,
+.toast-danger .toast-barre {
+    background: linear-gradient(90deg, #fca5a5, var(--danger));
+}
+
+@keyframes toast-entree {
+    from {
+        opacity: 0;
+        transform: translateY(-16px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toast-sortie {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-12px) scale(0.96);
+    }
+}
+
+@keyframes toast-jauge {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+/* =====================================
+   SQUELETTES DE CHARGEMENT (SKELETONS)
+===================================== */
+
+@keyframes pulse-scintille {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-base {
+    background: linear-gradient(
+        90deg,
+        var(--g60) 20%,
+        var(--g85) 50%,
+        var(--g60) 80%
+    );
+    background-size: 200% 100%;
+    animation: pulse-scintille 1.5s infinite ease-in-out;
+    border-radius: 8px;
+}
+
+.skeleton-cercle {
+    border-radius: 50% !important;
+}
+
+/* Squelette Publication */
+.skeleton-pub {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
+    background: var(--verre);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon);
+    box-shadow: var(--reflet);
+}
+
+.skeleton-pub-tete {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.skeleton-pub-avatar {
+    width: 44px;
+    height: 44px;
+}
+
+.skeleton-pub-lignes {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.skeleton-ligne {
+    height: 12px;
+    border-radius: 6px;
+}
+
+.skeleton-pub-image {
+    width: 100%;
+    height: 220px;
+    border-radius: var(--rayon-petit);
+}
+
+.skeleton-pub-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.skeleton-action-pill {
+    flex: 1;
+    height: 34px;
+    border-radius: 999px;
+}
+
+/* Squelette Boutique */
+.skeleton-boutique {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    background: var(--verre);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon-petit);
+}
+
+.skeleton-boutique-photo {
+    width: 100%;
+    height: 120px;
+    border-radius: 10px;
+}
+
+/* Squelette Statut Story */
+.skeleton-statut {
+    flex: 0 0 auto;
+    width: 108px;
+    height: 186px;
+    border-radius: 16px;
+}
+
+/* Squelette Produit Vitrine */
+.skeleton-produit {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    background: var(--verre);
+    border: 1px solid var(--verre-bord);
+    border-radius: var(--rayon-petit);
+}
+
+.skeleton-produit-photo {
+    width: 100%;
+    height: 150px;
+    border-radius: 12px;
+}
+
+/* =====================================
+   BOUTON RETOUR EN HAUT (SCROLL-TO-TOP)
+===================================== */
+
+.bouton-haut {
+    position: fixed;
+    right: 18px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+    z-index: 55;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--encre);
+    background: var(--barre);
+    border: 1px solid var(--verre-bord);
+    border-radius: 50%;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16), var(--reflet);
+    -webkit-backdrop-filter: var(--flou);
+    backdrop-filter: var(--flou);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.9);
+    transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.1);
+}
+
+.bouton-haut.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.bouton-haut:active {
+    transform: scale(0.92);
+}
+
+.bouton-haut .ic {
+    width: 22px;
+    height: 22px;
 }
