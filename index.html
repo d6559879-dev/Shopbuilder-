@@ -31,12 +31,11 @@
             <section id="zone-statuts" class="zone-statuts" hidden>
                 <div id="rangee-statuts" class="rangee-statuts"></div>
             </section>
-
-            <div class="fil-onglets" role="group" aria-label="Filtrer le fil">
-                <button type="button" class="actif" data-filtre="tous" aria-pressed="true" onclick="changerFiltreFil('tous')">Pour vous</button>
-                <button type="button" data-filtre="suivis" aria-pressed="false" onclick="changerFiltreFil('suivis')">Suivis</button>
-            </div>
-
+<div class="fil-onglets" role="group" aria-label="Filtrer le fil">
+    <button type="button" class="actif" data-filtre="tous" aria-pressed="true" onclick="changerFiltreFil('tous')" data-i18n="home.forYou">Pour vous</button>
+    <button type="button" data-filtre="suivis" aria-pressed="false" onclick="changerFiltreFil('suivis')" data-i18n="home.following">Suivis</button>
+</div>
+            
             <section id="fil">
                 <div id="liste-fil"></div>
                 <button id="plus-fil" class="bouton-secondaire" type="button" onclick="chargerFil(true)" hidden>Voir plus de publications</button>
@@ -70,23 +69,54 @@
                 <div id="liste-boutiques" class="grille-boutiques"></div>
             </section>
 
-            <section class="hero hero-vendeur">
-                <h2>Vous vendez ?</h2>
-                <p>Créez votre boutique gratuitement et touchez de nouveaux clients.</p>
-                <a href="vendeur.html" class="bouton-principal">Ouvrir ma boutique</a>
-            </section>
+<section class="hero hero-vendeur">
+    <h2 data-i18n="shops.becomeSeller">Vous vendez ?</h2>
+    <p data-i18n="shops.createShopDesc">Créez votre boutique gratuitement et touchez de nouveaux clients.</p>
+    <a href="vendeur.html" class="bouton-principal" data-i18n="shops.createShop">Ouvrir ma boutique</a>
+</section>
 
         </div>
 
     </main>
 
-    <!-- BARRE DU BAS -->
+  <!-- BARRE DU BAS -->
     <nav class="fb-barre" aria-label="Navigation principale">
-        <button type="button" class="actif" data-onglet="accueil" onclick="afficherOnglet('accueil')"><span class="ic-boite"><svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-home-ligne"></use></svg><svg class="ic ic-plein" aria-hidden="true"><use href="#ic-home-plein"></use></svg></span>Accueil</button>
-        <button type="button" data-onglet="boutiques" onclick="afficherOnglet('boutiques')"><span class="ic-boite"><svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-store-ligne"></use></svg><svg class="ic ic-plein" aria-hidden="true"><use href="#ic-store-plein"></use></svg></span>Boutiques</button>
-        <button type="button" class="avec-badge" onclick="ouvrirMessages()"><span class="ic-boite"><svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-chat-ligne"></use></svg><svg class="ic ic-plein" aria-hidden="true"><use href="#ic-chat-plein"></use></svg></span>Messages<i id="badge-messages" class="badge-nb" hidden></i></button>
-        <button type="button" onclick="ouvrirCommandesOnglet()"><span class="ic-boite"><svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-cart-ligne"></use></svg><svg class="ic ic-plein" aria-hidden="true"><use href="#ic-cart-plein"></use></svg></span>Commandes</button>
-        <button type="button" onclick="ouvrirCompte()"><span class="ic-boite"><svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-person-ligne"></use></svg><svg class="ic ic-plein" aria-hidden="true"><use href="#ic-person-plein"></use></svg></span>Compte</button>
+        <button type="button" class="actif" data-onglet="accueil" onclick="afficherOnglet('accueil')">
+            <span class="ic-boite">
+                <svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-home-ligne"></use></svg>
+                <svg class="ic ic-plein" aria-hidden="true"><use href="#ic-home-plein"></use></svg>
+            </span>
+            <span data-i18n="nav.home">Accueil</span>
+        </button>
+        <button type="button" data-onglet="boutiques" onclick="afficherOnglet('boutiques')">
+            <span class="ic-boite">
+                <svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-store-ligne"></use></svg>
+                <svg class="ic ic-plein" aria-hidden="true"><use href="#ic-store-plein"></use></svg>
+            </span>
+            <span data-i18n="nav.shops">Boutiques</span>
+        </button>
+        <button type="button" class="avec-badge" onclick="ouvrirMessages()">
+            <span class="ic-boite">
+                <svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-chat-ligne"></use></svg>
+                <svg class="ic ic-plein" aria-hidden="true"><use href="#ic-chat-plein"></use></svg>
+            </span>
+            <span data-i18n="nav.messages">Messages</span>
+            <i id="badge-messages" class="badge-nb" hidden></i>
+        </button>
+        <button type="button" onclick="ouvrirCommandesOnglet()">
+            <span class="ic-boite">
+                <svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-cart-ligne"></use></svg>
+                <svg class="ic ic-plein" aria-hidden="true"><use href="#ic-cart-plein"></use></svg>
+            </span>
+            <span data-i18n="nav.orders">Commandes</span>
+        </button>
+        <button type="button" onclick="ouvrirCompte()">
+            <span class="ic-boite">
+                <svg class="ic ic-ligne" aria-hidden="true"><use href="#ic-person-ligne"></use></svg>
+                <svg class="ic ic-plein" aria-hidden="true"><use href="#ic-person-plein"></use></svg>
+            </span>
+            <span data-i18n="nav.account">Compte</span>
+        </button>
     </nav>
 
     <!-- MENU (☰) façon Facebook -->
