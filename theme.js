@@ -51,7 +51,6 @@
         return svg;
     }
 
-    /* Les trois boutons Automatique / Clair / Sombre (réutilisés par le menu de l'accueil) */
     window.creerChoixTheme = function () {
         var groupe = document.createElement("div");
         groupe.className = "choix-theme";
@@ -79,9 +78,78 @@
 
     window.marquerTheme = function () { marquer(lire()); };
 
-    /* ---------- Langue (FR / EN) ---------- */
+    /* ---------- Langue (FR / EN) — système simple sans modules ES ---------- */
 
     var CLE_LANGUE = "dukani-locale";
+
+    var TRADUCTIONS = {
+        fr: {
+            "nav.home": "Accueil",
+            "nav.shops": "Boutiques",
+            "nav.messages": "Messages",
+            "nav.orders": "Commandes",
+            "nav.account": "Compte",
+            "home.forYou": "Pour vous",
+            "home.following": "Suivis",
+            "shops.becomeSeller": "Vous vendez ?",
+            "shops.createShopDesc": "Créez votre boutique gratuitement et touchez de nouveaux clients.",
+            "shops.createShop": "Ouvrir ma boutique",
+            "menu.shortcuts": "Vos raccourcis",
+            "menu.myShop": "Ma boutique",
+            "menu.publish": "Publier",
+            "menu.arrivals": "Arrivages",
+            "menu.messages": "Messages",
+            "menu.shops": "Boutiques",
+            "menu.orders": "Commandes",
+            "menu.sellerDashboard": "Tableau de bord vendeur",
+            "menu.marketplace": "Place de marché",
+            "menu.allShops": "Toutes les boutiques",
+            "menu.settings": "Paramètres et confidentialité",
+            "menu.appearance": "Apparence",
+            "menu.language": "Langue / Language",
+            "menu.chooseLanguage": "Choisissez la langue de l'application.",
+            "menu.privacy": "Confidentialité",
+            "menu.about": "À propos de Dukani",
+            "menu.logout": "Déconnexion",
+            "menu.login": "Se connecter",
+            "menu.loginHint": "Connectez-vous ou créez un compte",
+            "menu.help": "Aide et assistance",
+            "common.themeAuto": "Automatique suit le réglage de votre téléphone. Clair et Sombre le remplacent."
+        },
+        en: {
+            "nav.home": "Home",
+            "nav.shops": "Shops",
+            "nav.messages": "Messages",
+            "nav.orders": "Orders",
+            "nav.account": "Account",
+            "home.forYou": "For you",
+            "home.following": "Following",
+            "shops.becomeSeller": "Are you a seller?",
+            "shops.createShopDesc": "Create your shop for free and reach new customers.",
+            "shops.createShop": "Open my shop",
+            "menu.shortcuts": "Your shortcuts",
+            "menu.myShop": "My shop",
+            "menu.publish": "Publish",
+            "menu.arrivals": "New arrivals",
+            "menu.messages": "Messages",
+            "menu.shops": "Shops",
+            "menu.orders": "Orders",
+            "menu.sellerDashboard": "Seller dashboard",
+            "menu.marketplace": "Marketplace",
+            "menu.allShops": "All shops",
+            "menu.settings": "Settings & privacy",
+            "menu.appearance": "Appearance",
+            "menu.language": "Language",
+            "menu.chooseLanguage": "Choose the app language.",
+            "menu.privacy": "Privacy",
+            "menu.about": "About Dukani",
+            "menu.logout": "Log out",
+            "menu.login": "Log in",
+            "menu.loginHint": "Log in or create an account",
+            "menu.help": "Help & support",
+            "common.themeAuto": "Automatic follows your phone setting. Light and Dark override it."
+        }
+    };
 
     function lireLangue() {
         try {
@@ -89,6 +157,23 @@
             if (l === "fr" || l === "en") return l;
         } catch (e) {}
         return "fr";
+    }
+
+    window.t = function (cle) {
+        var lang = lireLangue();
+        var dict = TRADUCTIONS[lang] || TRADUCTIONS.fr;
+        return dict[cle] || (TRADUCTIONS.fr[cle] || cle);
+    };
+
+    function appliquerTraductionsDom() {
+        document.querySelectorAll("[data-i18n]").forEach(function (el) {
+            var cle = el.getAttribute("data-i18n");
+            if (cle) el.textContent = window.t(cle);
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(function (el) {
+            var cle = el.getAttribute("data-i18n-placeholder");
+            if (cle) el.placeholder = window.t(cle);
+        });
     }
 
     function marquerLangue(code) {
@@ -125,13 +210,12 @@
                 try { localStorage.setItem(CLE_LANGUE, l.code); } catch (e) {}
                 document.documentElement.lang = l.code;
                 marquerLangue(l.code);
+                appliquerTraductionsDom();
 
-                // Si le module i18n est chargé, on l'utilise aussi
                 if (window.Dukani && window.Dukani.setLocale) {
-                    window.Dukani.setLocale(l.code);
+                    try { window.Dukani.setLocale(l.code); } catch (e) {}
                 }
 
-                // Reconstruit le menu pour mettre à jour les libellés
                 if (typeof construireMenu === "function") {
                     construireMenu();
                 }
@@ -192,7 +276,6 @@
         creerFenetre();
         marquer(lire());
 
-        /* Chaque page remplit la section « Compte » (connexion, déconnexion…) */
         var zone = document.getElementById("parametres-compte");
         zone.textContent = "";
         if (window.remplirParametresCompte) window.remplirParametresCompte(zone);
@@ -208,8 +291,6 @@
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") window.fermerParametres();
     });
-
-    /* ---------- Toasts de notification (remplace les alert() bloquants) ---------- */
 
     var conteneurToast = null;
 
@@ -304,7 +385,6 @@
         }
     };
 
-    /* Remplacement moderne et non-bloquant de alert() */
     var alertOriginal = window.alert;
     window.alert = function (msg) {
         if (document.body) {
@@ -318,5 +398,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         creerFenetre();
         appliquer(lire());
+        document.documentElement.lang = lireLangue();
+        appliquerTraductionsDom();
     });
 })();
