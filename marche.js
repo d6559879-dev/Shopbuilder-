@@ -1826,12 +1826,19 @@ function construireMenu() {
     /* Paramètres et confidentialité */
 
     corps.appendChild(sectionMenu("settings", "Paramètres et confidentialité", zone => {
-        zone.appendChild(nouvelElement("label", "", "Apparence"));
-        zone.appendChild(window.creerChoixTheme());
-        zone.appendChild(nouvelElement("p", "sous-titre",
-            "Automatique suit le réglage de votre téléphone. Clair et Sombre le remplacent."));
+ zone.appendChild(nouvelElement("label", "", "Apparence"));
+zone.appendChild(window.creerChoixTheme());
+zone.appendChild(nouvelElement("p", "sous-titre",
+    "Automatique suit le réglage de votre téléphone. Clair et Sombre le remplacent."));
 
-        zone.appendChild(nouvelElement("label", "", "Confidentialité"));
+zone.appendChild(nouvelElement("label", "", "Langue / Language"));
+if (window.creerChoixLangue) {
+    zone.appendChild(window.creerChoixLangue());
+}
+zone.appendChild(nouvelElement("p", "sous-titre",
+    "Choisissez la langue de l'application."));
+
+zone.appendChild(nouvelElement("label", "", "Confidentialité"));
         [
             "Votre email n'est jamais affiché aux autres utilisateurs.",
             "Votre nom apparaît dans vos commentaires et vos messages.",
