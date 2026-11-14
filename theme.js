@@ -79,6 +79,69 @@
 
     window.marquerTheme = function () { marquer(lire()); };
 
+    /* ---------- Langue (FR / EN) ---------- */
+
+    var CLE_LANGUE = "dukani-locale";
+
+    function lireLangue() {
+        try {
+            var l = localStorage.getItem(CLE_LANGUE);
+            if (l === "fr" || l === "en") return l;
+        } catch (e) {}
+        return "fr";
+    }
+
+    function marquerLangue(code) {
+        var boutons = document.querySelectorAll(".choix-langue button");
+        for (var i = 0; i < boutons.length; i++) {
+            var actif = boutons[i].getAttribute("data-locale") === code;
+            boutons[i].classList.toggle("actif", actif);
+            boutons[i].setAttribute("aria-pressed", actif ? "true" : "false");
+        }
+    }
+
+    window.creerChoixLangue = function () {
+        var groupe = document.createElement("div");
+        groupe.className = "choix-theme choix-langue";
+
+        var langues = [
+            { code: "fr", nom: "Français" },
+            { code: "en", nom: "English" }
+        ];
+        var actuelle = lireLangue();
+
+        langues.forEach(function (l) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.setAttribute("data-locale", l.code);
+            b.textContent = l.nom;
+            if (l.code === actuelle) {
+                b.classList.add("actif");
+                b.setAttribute("aria-pressed", "true");
+            } else {
+                b.setAttribute("aria-pressed", "false");
+            }
+            b.addEventListener("click", function () {
+                try { localStorage.setItem(CLE_LANGUE, l.code); } catch (e) {}
+                document.documentElement.lang = l.code;
+                marquerLangue(l.code);
+
+                // Si le module i18n est chargé, on l'utilise aussi
+                if (window.Dukani && window.Dukani.setLocale) {
+                    window.Dukani.setLocale(l.code);
+                }
+
+                // Reconstruit le menu pour mettre à jour les libellés
+                if (typeof construireMenu === "function") {
+                    construireMenu();
+                }
+            });
+            groupe.appendChild(b);
+        });
+
+        return groupe;
+    };
+
     function creerFenetre() {
         if (document.getElementById("parametres")) return;
 
