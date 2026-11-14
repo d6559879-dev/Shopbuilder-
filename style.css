@@ -1758,9 +1758,15 @@ a.carte-boutique:active {
     cursor: pointer;
 }
 
-.fb-barre button span {
+.fb-barre button .ic-boite {
     font-size: 22px;
     line-height: 1;
+}
+
+.fb-barre button span[data-i18n] {
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.2;
 }
 
 .fb-barre button.actif {
