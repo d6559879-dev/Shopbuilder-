@@ -227,7 +227,7 @@
 
         <div class="essayage-viewer">
             <canvas id="canvas-3d"></canvas>
-            <div class="essayage-hint">Tournez avec le doigt</div>
+            <div class="essayage-hint">Chargement du modèle…</div>
         </div>
 
         <div class="essayage-produit">
@@ -263,7 +263,14 @@
         <button type="button" class="creer" id="btn-panier">Ajouter au panier</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <script src="essayage.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+    </script>
+    <script type="module" src="essayage.js"></script>
 </body>
 </html>
