@@ -1,12 +1,14 @@
 /* =====================================
    DUKANI — Cabine d'essayage 3D
-   Modèle GLB gratuit + taille / couleur
+   GLB + photo + mensurations (étape 2)
 ===================================== */
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const params = new URLSearchParams(location.search);
+const CLE_MENSURATIONS = "dukani-essayage-mensurations";
+const CLE_PHOTO = "dukani-essayage-photo";
 
 const produit = {
   id: params.get("id") || "demo",
@@ -15,13 +17,23 @@ const produit = {
   devise: params.get("devise") || "FC",
   boutique: params.get("boutique") || "Boutique démo",
   retour: params.get("retour") || "index.html",
-  modele: params.get("modele") || "https://cdn.jsdelivr.net/gh/Starklord17/threejs-t-shirt@main/public/shirt_baked.glb"
+  modele:
+    params.get("modele") ||
+    "https://cdn.jsdelivr.net/gh/Starklord17/threejs-t-shirt@main/public/shirt_baked.glb"
 };
 
 let taille = "M";
 let couleur = "#7c3aed";
 let shirtRoot = null;
 let shirtMaterials = [];
+let photoDataUrl = null;
+
+const mensurations = {
+  hauteur: "",
+  poitrine: "",
+  tourTaille: "",
+  hanches: ""
+};
 
 const elNom = document.getElementById("nom-produit");
 const elPrix = document.getElementById("prix-produit");
@@ -41,6 +53,134 @@ document.getElementById("btn-retour").addEventListener("click", () => {
   if (history.length > 1) history.back();
   else location.href = produit.retour;
 });
+
+const champs = {
+  hauteur: document.getElementById("m-taille"),
+  poitrine: document.getElementById("m-poitrine"),
+  tourTaille: document.getElementById("m-taille-tour"),
+  hanches: document.getElementById("m-hanches")
+};
+
+try {
+  const sauve = JSON.parse(localStorage.getItem(CLE_MENSURATIONS) || "null");
+  if (sauve && typeof sauve === "object") {
+    Object.keys(mensurations).forEach((k) => {
+      if (sauve[k] != null && sauve[k] !== "") {
+        mensurations[k] = String(sauve[k]);
+        if (champs[k]) champs[k].value = mensurations[k];
+      }
+    });
+  }
+} catch (e) {}
+
+function lireMensurations() {
+  Object.keys(champs).forEach((k) => {
+    mensurations[k] = champs[k] ? champs[k].value.trim() : "";
+  });
+  try {
+    localStorage.setItem(CLE_MENSURATIONS, JSON.stringify(mensurations));
+  } catch (e) {}
+  appliquerEchelle();
+  suggererTailleVetement();
+}
+
+Object.values(champs).forEach((el) => {
+  if (!el) return;
+  el.addEventListener("change", lireMensurations);
+  el.addEventListener("blur", lireMensurations);
+});
+
+function suggererTailleVetement() {
+  const p = Number(mensurations.poitrine);
+  if (!Number.isFinite(p) || p < 60) return;
+  let t = "M";
+  if (p < 84) t = "XS";
+  else if (p < 90) t = "S";
+  else if (p < 98) t = "M";
+  else if (p < 106) t = "L";
+  else t = "XL";
+
+  const zone = document.getElementById("choix-tailles");
+  if (!zone) return;
+  const btn = zone.querySelector(`button[data-taille="${t}"]`);
+  if (!btn || btn.classList.contains("actif")) return;
+  taille = t;
+  zone.querySelectorAll("button").forEach((b) => {
+    b.classList.toggle("actif", b === btn);
+  });
+}
+
+const inputPhoto = document.getElementById("input-photo");
+const apercu = document.getElementById("photo-apercu");
+const btnEffacer = document.getElementById("btn-effacer-photo");
+
+function afficherPhoto(dataUrl) {
+  photoDataUrl = dataUrl;
+  if (!apercu) return;
+  if (dataUrl) {
+    apercu.src = dataUrl;
+    apercu.classList.add("visible");
+    if (btnEffacer) btnEffacer.hidden = false;
+  } else {
+    apercu.removeAttribute("src");
+    apercu.classList.remove("visible");
+    if (btnEffacer) btnEffacer.hidden = true;
+  }
+}
+
+try {
+  const photoSauvee = localStorage.getItem(CLE_PHOTO);
+  if (photoSauvee && photoSauvee.startsWith("data:image")) {
+    afficherPhoto(photoSauvee);
+  }
+} catch (e) {}
+
+if (inputPhoto) {
+  inputPhoto.addEventListener("change", () => {
+    const fichier = inputPhoto.files && inputPhoto.files[0];
+    if (!fichier) return;
+    if (fichier.size > 4 * 1024 * 1024) {
+      alert("Photo trop lourde (max 4 Mo).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      const img = new Image();
+      img.onload = () => {
+        const max = 720;
+        let w = img.width;
+        let h = img.height;
+        if (w > max || h > max) {
+          const r = Math.min(max / w, max / h);
+          w = Math.round(w * r);
+          h = Math.round(h * r);
+        }
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        c.getContext("2d").drawImage(img, 0, 0, w, h);
+        const compact = c.toDataURL("image/jpeg", 0.82);
+        afficherPhoto(compact);
+        try {
+          localStorage.setItem(CLE_PHOTO, compact);
+        } catch (e) {}
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(fichier);
+  });
+}
+
+if (btnEffacer) {
+  btnEffacer.addEventListener("click", () => {
+    afficherPhoto(null);
+    if (inputPhoto) inputPhoto.value = "";
+    try {
+      localStorage.removeItem(CLE_PHOTO);
+    } catch (e) {}
+  });
+}
 
 document.getElementById("choix-tailles").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-taille]");
@@ -63,6 +203,7 @@ document.getElementById("choix-couleurs").addEventListener("click", (e) => {
 });
 
 document.getElementById("btn-panier").addEventListener("click", () => {
+  lireMensurations();
   if (window.afficherToast) {
     window.afficherToast(
       "✅ " + produit.nom + " (" + taille + ") — prêt pour la commande"
@@ -80,6 +221,8 @@ document.getElementById("btn-panier").addEventListener("click", () => {
       boutique: produit.boutique,
       taille,
       couleur,
+      mensurations: { ...mensurations },
+      photo: photoDataUrl ? true : false,
       at: Date.now()
     };
     const liste = JSON.parse(
@@ -143,8 +286,19 @@ function appliquerCouleur() {
 function appliquerEchelle() {
   if (!shirtRoot) return;
   const echelles = { XS: 0.9, S: 0.95, M: 1, L: 1.06, XL: 1.12 };
-  const s = echelles[taille] || 1;
-  shirtRoot.scale.setScalar(s * (shirtRoot.userData.baseScale || 1));
+  let s = echelles[taille] || 1;
+
+  const h = Number(mensurations.hauteur);
+  const p = Number(mensurations.poitrine);
+  if (Number.isFinite(h) && h >= 120 && h <= 220) {
+    s *= h / 170;
+  }
+  if (Number.isFinite(p) && p >= 60 && p <= 160) {
+    s *= 0.85 + 0.15 * (p / 92);
+  }
+
+  const base = shirtRoot.userData.baseScale || 1;
+  shirtRoot.scale.setScalar(s * base);
 }
 
 const loader = new GLTFLoader();
