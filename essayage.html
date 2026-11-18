@@ -209,6 +209,94 @@
             background: rgba(124, 58, 237, 0.12);
             border-color: rgba(124, 58, 237, 0.35);
         }
+
+        .mensurations-grille {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mensurations-grille label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--encre-douce);
+        }
+
+        .mensurations-grille input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 14px;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--encre);
+            background: var(--verre-fort);
+            border: 1px solid var(--verre-bord);
+            border-radius: 14px;
+            outline: none;
+        }
+
+        .mensurations-grille input:focus {
+            border-color: rgba(124, 58, 237, 0.55);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+        }
+
+        .photo-zone {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .photo-apercu {
+            width: 72px;
+            height: 72px;
+            border-radius: 16px;
+            object-fit: cover;
+            background: var(--g55);
+            border: 1px solid var(--verre-bord);
+            display: none;
+        }
+
+        .photo-apercu.visible {
+            display: block;
+        }
+
+        .photo-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .photo-actions button,
+        .photo-actions label.fichier {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--encre);
+            background: var(--verre-fort);
+            border: 1px solid var(--verre-bord);
+            border-radius: 999px;
+            cursor: pointer;
+        }
+
+        .photo-actions input[type="file"] {
+            display: none;
+        }
+
+        .aide-mensurations {
+            margin: 8px 0 0;
+            font-size: 12px;
+            color: var(--encre-douce);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -220,8 +308,8 @@
 
         <div class="etapes-mini" aria-label="Étapes">
             <span>1. Produit</span>
-            <span class="actif">2. Essayage 3D</span>
-            <span>3. Taille & couleur</span>
+            <span class="actif">2. Photo & mensurations</span>
+            <span>3. Essayage 3D</span>
             <span>4. Panier</span>
         </div>
 
@@ -234,6 +322,44 @@
             <h2 id="nom-produit">T-shirt Premium</h2>
             <p class="prix" id="prix-produit">25 000 FC</p>
             <p class="boutique" id="nom-boutique">Boutique démo</p>
+        </div>
+
+        <div class="essayage-section">
+            <label>Votre photo (optionnel)</label>
+            <div class="photo-zone">
+                <img id="photo-apercu" class="photo-apercu" alt="Aperçu">
+                <div class="photo-actions">
+                    <label class="fichier">
+                        📷 Prendre / choisir une photo
+                        <input type="file" id="input-photo" accept="image/*" capture="user">
+                    </label>
+                    <button type="button" id="btn-effacer-photo" hidden>Retirer la photo</button>
+                </div>
+            </div>
+            <p class="aide-mensurations">La photo sert de référence visuelle. L’analyse IA arrivera plus tard.</p>
+        </div>
+
+        <div class="essayage-section">
+            <label>Vos mensurations (cm)</label>
+            <div class="mensurations-grille">
+                <div>
+                    <label for="m-taille">Taille (hauteur)</label>
+                    <input type="number" id="m-taille" inputmode="decimal" min="120" max="220" step="1" placeholder="170">
+                </div>
+                <div>
+                    <label for="m-poitrine">Tour de poitrine</label>
+                    <input type="number" id="m-poitrine" inputmode="decimal" min="60" max="160" step="1" placeholder="92">
+                </div>
+                <div>
+                    <label for="m-taille-tour">Tour de taille</label>
+                    <input type="number" id="m-taille-tour" inputmode="decimal" min="50" max="150" step="1" placeholder="78">
+                </div>
+                <div>
+                    <label for="m-hanches">Tour de hanches</label>
+                    <input type="number" id="m-hanches" inputmode="decimal" min="60" max="160" step="1" placeholder="96">
+                </div>
+            </div>
+            <p class="aide-mensurations">Ces valeurs ajustent le mannequin 3D. Elles sont enregistrées sur cet appareil.</p>
         </div>
 
         <div class="essayage-section">
