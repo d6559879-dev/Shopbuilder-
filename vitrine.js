@@ -137,7 +137,6 @@ function afficher() {
     if (boutique.image_path) {
         let photo = $("v-photo");
 
-        /* Si la page n'a pas encore l'emplacement de la photo, on le crée */
         if (!photo) {
             photo = document.createElement("img");
             photo.id = "v-photo";
@@ -156,7 +155,6 @@ function afficher() {
         lien.hidden = false;
         lien.href = "tel:" + boutique.telephone.replace(/[^0-9+]/g, "");
 
-        /* Même numéro pour WhatsApp */
         const numeroWa = numeroWhatsApp(boutique.telephone);
 
         if (numeroWa && $("v-whatsapp")) {
@@ -202,6 +200,25 @@ function afficher() {
         bt.className = "creer";
         bt.disabled = !dispo;
         bt.addEventListener("click", () => ouvrirCommande(p));
+
+        /* Essayage 3D */
+        const essai = document.createElement("button");
+        essai.type = "button";
+        essai.className = "bouton-secondaire";
+        essai.textContent = "🪞 Essayer en 3D";
+        essai.addEventListener("click", () => {
+            const q = new URLSearchParams({
+                id: String(p.id),
+                nom: p.nom || "",
+                prix: String(p.prix ?? ""),
+                devise: (boutique && boutique.devise === "USD") ? "USD" : "FC",
+                boutique: (boutique && boutique.nom) || "",
+                retour: "vitrine.html?b=" + encodeURIComponent(slug)
+            });
+            if (p.image_path) q.set("image", p.image_path);
+            location.href = "essayage.html?" + q.toString();
+        });
+        carte.appendChild(essai);
 
         /* Enregistrer le produit pour plus tard */
 
@@ -260,7 +277,6 @@ function ouvrirFormulaire(p, nom) {
     $("c-quantite").value = "1";
     $("c-quantite").max = Math.min(p.stock, 20);
 
-    /* Modes de paiement proposés par la boutique */
     const choix = $("c-paiement");
     choix.innerHTML = "";
 
@@ -321,7 +337,6 @@ async function envoyerCommande() {
     $("c-telephone").value = "";
     fermerCommande();
 
-    /* Mobile money : on passe directement aux instructions de paiement */
     if (mode === "mobile_money" && idCommande) {
         location.href = "index.html?payer=" + encodeURIComponent(idCommande);
         return;
